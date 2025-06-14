@@ -21,9 +21,7 @@ export class Logger {
 
 	private static log(level: LogLevel, message: string, meta: Meta = {}) {
 		if (!this.shouldLog(level)) return;
-		for (const transport of this.transports) {
-			transport.log(level, message, meta);
-		}
+		this.transports.forEach((transport) => transport.log(level, message, meta));
 	}
 
 	static debug(message: string, meta?: Meta) {

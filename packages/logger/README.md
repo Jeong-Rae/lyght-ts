@@ -70,13 +70,36 @@ Logger.useTransports(new ConsoleTransport());
 
 ### File Transport
 
-파일에 로그를 저장합니다.
+파일에 로그를 저장합니다. 파일 롤링, 압축, 자동 디렉토리 생성을 지원합니다.
+
+#### 기본 사용법
 
 ```typescript
-import { Logger, FileTransport } from 'logger';
+import { Logger, FileTransport } from '@lyght/logger';
 
+// 간단한 파일 로깅
 Logger.useTransports(new FileTransport('./logs/app.log'));
 ```
+
+#### 고급 옵션
+
+```typescript
+import { Logger, FileTransport } from '@lyght/logger';
+
+Logger.useTransports(new FileTransport({
+  filePath: './logs/app.log',
+  maxFileSize: 10 * 1024 * 1024,  // 10MB (기본값)
+  maxFiles: 5,                     // 최대 5개 파일 보관 (기본값)
+  compress: true                   // 회전된 파일 압축 (기본값: true)
+}));
+```
+
+#### 주요 기능
+
+- **자동 롤링**: 파일 크기가 `maxFileSize`를 초과하면 자동으로 새 파일로 회전
+- **파일 압축**: 회전된 파일을 gzip으로 압축하여 디스크 공간 절약
+- **자동 정리**: `maxFiles` 수를 초과하는 오래된 파일 자동 삭제
+- **디렉토리 생성**: 로그 파일 경로의 디렉토리가 없으면 자동 생성
 
 ### APM Transport
 
@@ -170,16 +193,16 @@ Logger.error('심각한 에러 발생', {
 #### 정적 메서드
 
 - `Logger.useTransports(...transports: Transport[])` - Transport 설정
-- `Logger.debug(message: string, meta?: Meta)` - 디버그 로그
-- `Logger.info(message: string, meta?: Meta)` - 정보 로그  
-- `Logger.warn(message: string, meta?: Meta)` - 경고 로그
-- `Logger.error(errOrMsg: string | Error, meta?: Meta)` - 에러 로그
+- `await Logger.debug(message: string, meta?: Meta)` - 디버그 로그
+- `await Logger.info(message: string, meta?: Meta)` - 정보 로그  
+- `await Logger.warn(message: string, meta?: Meta)` - 경고 로그
+- `await Logger.error(errOrMsg: string | Error, meta?: Meta)` - 에러 로그
 
 ### Transport 인터페이스
 
 ```typescript
 interface Transport {
-  log(level: LogLevel, message: string, meta?: Meta): void;
+  log(level: LogLevel, message: string, meta?: Meta): void | Promise<void>;
 }
 ```
 
@@ -188,6 +211,13 @@ interface Transport {
 ```typescript
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 type Meta = Record<string, unknown>;
+
+interface FileTransportOptions {
+  filePath: string;
+  maxFileSize?: number;  // bytes, 기본값: 10MB
+  maxFiles?: number;     // 기본값: 5
+  compress?: boolean;    // 기본값: true
+}
 ```
 
 ## 🌍 환경변수
@@ -225,12 +255,13 @@ ISC
 
 ## ⚠️ 주의사항
 
-### 파일 로깅 시 디렉토리 생성
+### 파일 로깅 시 디렉토리 자동 생성
 
-FileTransport를 사용할 때는 로그 파일이 저장될 디렉토리가 존재해야 합니다:
+FileTransport는 로그 파일 경로의 디렉토리가 없으면 자동으로 생성합니다. 별도의 디렉토리 생성이 불필요합니다.
 
-```bash
-mkdir logs  # 디렉토리 생성
+```typescript
+// 디렉토리가 없어도 자동 생성됨
+Logger.useTransports(new FileTransport('./logs/nested/deep/app.log'));
 ```
 
 ### 환경변수 설정

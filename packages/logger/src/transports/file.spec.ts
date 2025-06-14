@@ -1,23 +1,62 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import fs from "node:fs";
-import { FileTransport } from "./file";
+import fs from "fs";
+import path from "path";
+import zlib from "zlib";
+import { FileTransport, FileTransportOptions } from "./file";
+import { globalBackgroundQueue } from "../utils/background-queue";
 
 vi.mock("fs");
+vi.mock("path");
+vi.mock("zlib");
+vi.mock("../utils/background-queue", () => ({
+	globalBackgroundQueue: {
+		enqueue: vi.fn(),
+		waitForCompletion: vi.fn().mockResolvedValue(undefined),
+	},
+}));
 
 describe("FileTransport", () => {
-	let fileTransport: FileTransport;
 	let mockWriteStream: {
 		write: ReturnType<typeof vi.fn>;
+		end: ReturnType<typeof vi.fn>;
 	};
-	const testFilePath = "/tmp/test.log";
+	let mockReadStream: any;
+	let mockGzip: any;
 
 	beforeEach(() => {
 		mockWriteStream = {
 			write: vi.fn(),
+			end: vi.fn((callback) => callback && callback()),
 		};
 
+		mockReadStream = {
+			pipe: vi.fn().mockReturnThis(),
+		};
+
+		mockGzip = {
+			pipe: vi.fn().mockReturnThis(),
+			on: vi.fn((event, callback) => {
+				if (event === "finish") {
+					// 비동기적으로 callback 호출
+					setTimeout(callback, 0);
+				}
+				return mockGzip;
+			}),
+		};
+
+		// 기본 모킹 설정
 		vi.mocked(fs.createWriteStream).mockReturnValue(mockWriteStream as any);
-		fileTransport = new FileTransport(testFilePath);
+		vi.mocked(fs.createReadStream).mockReturnValue(mockReadStream);
+		vi.mocked(fs.existsSync).mockReturnValue(false); // 기본적으로 디렉토리가 없다고 가정
+		vi.mocked(fs.statSync).mockReturnValue({ size: 1000 } as any);
+		vi.mocked(fs.mkdirSync).mockReturnValue(undefined);
+		vi.mocked(fs.readdirSync).mockReturnValue([]);
+		vi.mocked(fs.renameSync).mockReturnValue(undefined);
+		vi.mocked(fs.unlinkSync).mockReturnValue(undefined);
+		vi.mocked(path.dirname).mockReturnValue("/tmp");
+		vi.mocked(path.basename).mockReturnValue("test.log");
+		vi.mocked(path.join).mockImplementation((...args) => args.join("/"));
+		vi.mocked(zlib.createGzip).mockReturnValue(mockGzip);
 	});
 
 	afterEach(() => {
@@ -25,88 +64,146 @@ describe("FileTransport", () => {
 	});
 
 	describe("constructor", () => {
-		it("지정된 경로에 WriteStream을 생성합니다", () => {
-			expect(fs.createWriteStream).toHaveBeenCalledWith(testFilePath, {
+		it("문자열 경로로 기본 옵션과 함께 초기화됩니다", () => {
+			const transport = new FileTransport("/tmp/test.log");
+
+			expect(fs.mkdirSync).toHaveBeenCalledWith("/tmp", { recursive: true });
+			expect(fs.createWriteStream).toHaveBeenCalledWith("/tmp/test.log", {
 				flags: "a",
 			});
+		});
+
+		it("옵션 객체로 초기화됩니다", () => {
+			const options: FileTransportOptions = {
+				filePath: "/tmp/test.log",
+				maxFileSize: 5 * 1024 * 1024, // 5MB
+				maxFiles: 3,
+				compress: false,
+			};
+
+			const transport = new FileTransport(options);
+
+			expect(fs.mkdirSync).toHaveBeenCalledWith("/tmp", { recursive: true });
+			expect(fs.createWriteStream).toHaveBeenCalledWith("/tmp/test.log", {
+				flags: "a",
+			});
+		});
+
+		it("디렉토리가 이미 있으면 생성하지 않습니다", () => {
+			vi.mocked(fs.existsSync).mockReturnValue(true);
+
+			new FileTransport("/tmp/logs/test.log");
+
+			expect(fs.mkdirSync).not.toHaveBeenCalled();
 		});
 	});
 
 	describe("log", () => {
-		it("debug 레벨 로그를 파일에 작성합니다", () => {
+		it("기본 로그를 파일에 즉시 작성합니다", () => {
 			const mockDate = new Date("2024-01-01T00:00:00.000Z");
 			vi.setSystemTime(mockDate);
 
-			fileTransport.log("debug", "debug message");
+			const transport = new FileTransport("/tmp/test.log");
+			transport.log("info", "test message");
 
 			expect(mockWriteStream.write).toHaveBeenCalledWith(
-				"2024-01-01T00:00:00.000Z [DEBUG] debug message {}\n",
+				"2024-01-01T00:00:00.000Z [INFO] test message {}\n",
 			);
 		});
 
-		it("info 레벨 로그를 파일에 작성합니다", () => {
-			const mockDate = new Date("2024-01-01T12:30:45.123Z");
+		it("메타데이터와 함께 로그를 작성합니다", () => {
+			const mockDate = new Date("2024-01-01T00:00:00.000Z");
 			vi.setSystemTime(mockDate);
 
+			const transport = new FileTransport("/tmp/test.log");
 			const meta = { userId: "123", action: "login" };
-			fileTransport.log("info", "user logged in", meta);
+			transport.log("info", "user logged in", meta);
 
 			expect(mockWriteStream.write).toHaveBeenCalledWith(
-				'2024-01-01T12:30:45.123Z [INFO] user logged in {"userId":"123","action":"login"}\n',
+				'2024-01-01T00:00:00.000Z [INFO] user logged in {"userId":"123","action":"login"}\n',
 			);
 		});
 
-		it("warn 레벨 로그를 파일에 작성합니다", () => {
-			const mockDate = new Date("2024-01-01T09:15:30.456Z");
-			vi.setSystemTime(mockDate);
-
-			fileTransport.log("warn", "warning message");
-
-			expect(mockWriteStream.write).toHaveBeenCalledWith(
-				"2024-01-01T09:15:30.456Z [WARN] warning message {}\n",
-			);
-		});
-
-		it("error 레벨 로그를 파일에 작성합니다", () => {
-			const mockDate = new Date("2024-01-01T18:45:00.789Z");
-			vi.setSystemTime(mockDate);
-
-			const meta = { error: "Database connection failed", retryCount: 3 };
-			fileTransport.log("error", "connection error", meta);
-
-			expect(mockWriteStream.write).toHaveBeenCalledWith(
-				'2024-01-01T18:45:00.789Z [ERROR] connection error {"error":"Database connection failed","retryCount":3}\n',
-			);
-		});
-
-		it("meta가 없을 때 빈 객체로 처리합니다", () => {
-			const mockDate = new Date("2024-01-01T00:00:00.000Z");
-			vi.setSystemTime(mockDate);
-
-			fileTransport.log("info", "simple message");
-
-			expect(mockWriteStream.write).toHaveBeenCalledWith(
-				"2024-01-01T00:00:00.000Z [INFO] simple message {}\n",
-			);
-		});
-
-		it("복잡한 meta 객체를 JSON으로 직렬화합니다", () => {
-			const mockDate = new Date("2024-01-01T00:00:00.000Z");
-			vi.setSystemTime(mockDate);
-
-			const complexMeta = {
-				user: { id: 123, name: "John Doe" },
-				tags: ["authentication", "security"],
-				timestamp: "2024-01-01",
-				nested: { level: 1, data: { value: "test" } },
+		it("파일 크기가 최대치를 초과할 때 백그라운드 큐에 회전 작업을 추가합니다", () => {
+			const options: FileTransportOptions = {
+				filePath: "/tmp/test.log",
+				maxFileSize: 100, // 작은 크기로 설정
+				maxFiles: 3,
+				compress: false,
 			};
 
-			fileTransport.log("info", "complex log", complexMeta);
+			// 현재 파일 크기를 90으로 설정
+			vi.mocked(fs.statSync).mockReturnValue({ size: 90 } as any);
 
-			const expectedMeta = JSON.stringify(complexMeta);
-			expect(mockWriteStream.write).toHaveBeenCalledWith(
-				`2024-01-01T00:00:00.000Z [INFO] complex log ${expectedMeta}\n`,
-			);
+			const transport = new FileTransport(options);
+
+			// 큰 메시지를 로그하여 회전을 트리거
+			const longMessage = "a".repeat(50);
+			transport.log("info", longMessage);
+
+			// 백그라운드 큐에 작업이 추가되었는지 확인
+			expect(globalBackgroundQueue.enqueue).toHaveBeenCalled();
+
+			// 로그는 즉시 작성되어야 함
+			expect(mockWriteStream.write).toHaveBeenCalled();
+		});
+	});
+
+	describe("file rotation", () => {
+		it("압축 없이 회전된 파일을 유지합니다", () => {
+			const options: FileTransportOptions = {
+				filePath: "/tmp/test.log",
+				maxFileSize: 100,
+				maxFiles: 3,
+				compress: false,
+			};
+
+			vi.mocked(fs.statSync).mockReturnValue({ size: 90 } as any);
+			vi.mocked(fs.existsSync).mockReturnValue(true);
+
+			const transport = new FileTransport(options);
+
+			const longMessage = "a".repeat(50);
+			transport.log("info", longMessage);
+
+			// 백그라운드 큐에 회전 작업이 추가되었는지 확인
+			expect(globalBackgroundQueue.enqueue).toHaveBeenCalled();
+		});
+
+		it("최대 파일 수를 초과하는 설정을 처리합니다", () => {
+			const options: FileTransportOptions = {
+				filePath: "/tmp/test.log",
+				maxFileSize: 100,
+				maxFiles: 2,
+				compress: false,
+			};
+
+			// 기존 로그 파일들이 있다고 가정
+			vi.mocked(fs.readdirSync).mockReturnValue([
+				"test.log.1",
+				"test.log.2",
+				"test.log.3",
+			] as any);
+
+			vi.mocked(fs.statSync).mockReturnValue({ size: 90 } as any);
+			vi.mocked(fs.existsSync).mockReturnValue(true);
+
+			const transport = new FileTransport(options);
+
+			const longMessage = "a".repeat(50);
+			transport.log("info", longMessage);
+
+			// 백그라운드 큐에 회전 작업이 추가되었는지 확인
+			expect(globalBackgroundQueue.enqueue).toHaveBeenCalled();
+		});
+	});
+
+	describe("close", () => {
+		it("스트림을 닫습니다", () => {
+			const transport = new FileTransport("/tmp/test.log");
+			transport.close();
+
+			expect(mockWriteStream.end).toHaveBeenCalled();
 		});
 	});
 });

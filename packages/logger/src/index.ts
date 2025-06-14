@@ -3,3 +3,7 @@ export * from "./types";
 export * from "./transports/apm";
 export * from "./transports/console";
 export * from "./transports/file";
+export * from "./transports/daily-file";
+export * from "./formatters";
+export * from "./constants";
+export * from "./utils/background-queue";
