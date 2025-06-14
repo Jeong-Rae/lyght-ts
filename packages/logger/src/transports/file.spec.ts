@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import fs from "fs";
+import fs from "node:fs";
 import { FileTransport } from "./file";
 
 vi.mock("fs");

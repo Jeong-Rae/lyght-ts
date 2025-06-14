@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Logger } from "./logger";
-import { Transport, LogLevel, Meta } from "./types";
+import { Transport } from "./types";
 
 describe("Logger", () => {
 	let mockTransport: Transport;
 	let originalLogLevel: string | undefined;
 
 	beforeEach(() => {
-		// 원본 환경변수 저장
 		originalLogLevel = process.env.LOG_LEVEL;
 
 		mockTransport = {
@@ -18,7 +17,6 @@ describe("Logger", () => {
 	});
 
 	afterEach(() => {
-		// 환경변수 복원
 		if (originalLogLevel === undefined) {
 			delete process.env.LOG_LEVEL;
 		} else {
