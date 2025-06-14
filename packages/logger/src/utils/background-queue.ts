@@ -8,6 +8,13 @@ export class BackgroundQueue {
 
 	/**
 	 * 백그라운드 작업을 큐에 추가합니다.
+	 * @param {BackgroundTask} task - 백그라운드 작업 함수
+	 * 
+	 * @example
+	 * ```typescript
+	 * const queue = new BackgroundQueue();
+	 * queue.enqueue(async () => fn());
+	 * ```
 	 */
 	enqueue(task: BackgroundTask): void {
 		if (this.queue.length >= MAX_QUEUE_SIZE) {
@@ -21,6 +28,7 @@ export class BackgroundQueue {
 
 	/**
 	 * 큐에 있는 작업들을 순차적으로 처리합니다.
+	 * @returns {Promise<void>} 큐 처리 완료 시 Promise
 	 */
 	private async processQueue(): Promise<void> {
 		if (this.processing || this.queue.length === 0) {
@@ -53,6 +61,7 @@ export class BackgroundQueue {
 
 	/**
 	 * 현재 큐에 있는 작업 수를 반환합니다.
+	 * @returns {number} 큐에 있는 작업 수
 	 */
 	get size(): number {
 		return this.queue.length;
@@ -60,6 +69,7 @@ export class BackgroundQueue {
 
 	/**
 	 * 큐가 현재 작업을 처리 중인지 확인합니다.
+	 * @returns {boolean} 큐가 현재 작업을 처리 중이면 true, 아니면 false
 	 */
 	get isProcessing(): boolean {
 		return this.processing;
@@ -67,6 +77,7 @@ export class BackgroundQueue {
 
 	/**
 	 * 모든 작업이 완료될 때까지 대기합니다.
+	 * @returns {Promise<void>} 모든 작업이 완료될 때까지 대기
 	 */
 	async waitForCompletion(): Promise<void> {
 		while (this.processing || this.queue.length > 0) {
