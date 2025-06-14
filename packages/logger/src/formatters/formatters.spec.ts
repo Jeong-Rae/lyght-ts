@@ -29,9 +29,7 @@ describe("Formatters", () => {
 		it("빈 메타데이터로 로그를 포맷팅합니다", () => {
 			const result = formatter.format("error", "error message", {}, testDate);
 
-			expect(result).toBe(
-				"2024-01-01T12:30:45.123Z [ERROR] error message\n",
-			);
+			expect(result).toBe("2024-01-01T12:30:45.123Z [ERROR] error message\n");
 		});
 
 		it("모든 로그 레벨을 올바르게 포맷팅합니다", () => {

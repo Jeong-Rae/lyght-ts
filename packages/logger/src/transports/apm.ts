@@ -31,7 +31,6 @@ export class ApmTransport implements Transport {
 		meta: Meta = {},
 		timestamp: Date = now(),
 	): void {
-		// 설정된 레벨 이상일 때만 APM에 전송
 		if (!this.shouldCapture(level)) {
 			return;
 		}

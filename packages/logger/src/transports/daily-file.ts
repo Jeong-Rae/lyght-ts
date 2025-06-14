@@ -1,4 +1,3 @@
-import fs from "fs";
 import path from "path";
 import { Transport, LogLevel, Meta } from "../types";
 import { LogFormatter, DefaultFormatter } from "../formatters";
@@ -14,6 +13,13 @@ import {
 	extractDateFromFilename,
 	now,
 } from "../utils/datetime";
+import {
+	ensureDirectory,
+	createWriteStream,
+	listFilesWithPattern,
+	deleteFile,
+	joinPath,
+} from "../utils/fs";
 
 export interface DailyFileTransportOptions {
 	/** 로그 파일 디렉토리 */
@@ -35,7 +41,7 @@ export class DailyFileTransport implements Transport {
 	private readonly maxDays: number;
 	private readonly formatter: LogFormatter;
 	private currentDate: string = "";
-	private currentStream?: fs.WriteStream;
+	private currentStream?: NodeJS.WritableStream;
 	private isClosed: boolean = false;
 
 	constructor(options: DailyFileTransportOptions) {
@@ -45,9 +51,7 @@ export class DailyFileTransport implements Transport {
 		this.formatter = options.formatter ?? new DefaultFormatter();
 
 		// 디렉토리 생성
-		if (!fs.existsSync(this.logDirectory)) {
-			fs.mkdirSync(this.logDirectory, { recursive: true });
-		}
+		ensureDirectory(this.logDirectory);
 
 		// 초기 정리 작업
 		this.cleanupOldFiles();
@@ -76,7 +80,7 @@ export class DailyFileTransport implements Transport {
 
 			this.currentDate = formattedDate;
 			const filePath = this.getCurrentFilePath(date);
-			this.currentStream = fs.createWriteStream(filePath, {
+			this.currentStream = createWriteStream(filePath, {
 				flags: FILE_APPEND_FLAG,
 			});
 		}
@@ -84,25 +88,22 @@ export class DailyFileTransport implements Transport {
 
 	private cleanupOldFiles(): void {
 		try {
-			const files = fs.readdirSync(this.logDirectory);
+			const pattern = new RegExp(
+				`^${this.fileNamePattern}-.*${LOG_FILE_EXTENSION}$`,
+			);
+			const files = listFilesWithPattern(this.logDirectory, pattern);
 			const currentDate = now();
 
-			files
-				.filter(
-					(file) =>
-						file.startsWith(this.fileNamePattern) &&
-						file.endsWith(LOG_FILE_EXTENSION),
-				)
-				.forEach((file) => {
-					const match = file.match(DATE_FORMAT_REGEX);
-					if (match) {
-						const fileDate = extractDateFromFilename(file);
-						if (fileDate && isOlderThan(fileDate, this.maxDays, currentDate)) {
-							const filePath = path.join(this.logDirectory, file);
-							fs.unlinkSync(filePath);
-						}
+			files.forEach((file: string) => {
+				const match = file.match(DATE_FORMAT_REGEX);
+				if (match) {
+					const fileDate = extractDateFromFilename(file);
+					if (fileDate && isOlderThan(fileDate, this.maxDays, currentDate)) {
+						const filePath = joinPath(this.logDirectory, file);
+						deleteFile(filePath);
 					}
-				});
+				}
+			});
 		} catch (error) {
 			// 실패는 무시
 		}

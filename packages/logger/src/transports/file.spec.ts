@@ -5,10 +5,12 @@ import zlib from "zlib";
 import { FileTransport, FileTransportOptions } from "./file";
 import { globalBackgroundQueue } from "../utils/background-queue";
 import { JsonFormatter, SimpleFormatter } from "../formatters";
+import * as fsUtils from "../utils/fs";
 
 vi.mock("fs");
 vi.mock("path");
 vi.mock("zlib");
+vi.mock("../utils/fs");
 vi.mock("../utils/background-queue", () => ({
 	globalBackgroundQueue: {
 		enqueue: vi.fn(),
@@ -58,6 +60,21 @@ describe("FileTransport", () => {
 		vi.mocked(path.basename).mockReturnValue("test.log");
 		vi.mocked(path.join).mockImplementation((...args) => args.join("/"));
 		vi.mocked(zlib.createGzip).mockReturnValue(mockGzip);
+
+		// 파일시스템 유틸리티 모킹
+		vi.mocked(fsUtils.ensureFileDirectory).mockReturnValue(true);
+		vi.mocked(fsUtils.getFileSize).mockReturnValue(1000);
+		vi.mocked(fsUtils.createWriteStream).mockReturnValue(
+			mockWriteStream as any,
+		);
+		vi.mocked(fsUtils.getDirectory).mockReturnValue("/tmp");
+		vi.mocked(fsUtils.getBaseName).mockReturnValue("test");
+		vi.mocked(fsUtils.getExtension).mockReturnValue(".log");
+		vi.mocked(fsUtils.listFiles).mockReturnValue([]);
+		vi.mocked(fsUtils.deleteFile).mockReturnValue(true);
+		vi.mocked(fsUtils.moveFile).mockReturnValue(true);
+		vi.mocked(fsUtils.exists).mockReturnValue(false);
+		vi.mocked(fsUtils.compressFile).mockResolvedValue(true);
 	});
 
 	afterEach(() => {
@@ -68,10 +85,8 @@ describe("FileTransport", () => {
 		it("문자열 경로로 기본 옵션과 함께 초기화됩니다", () => {
 			const transport = new FileTransport("/tmp/test.log");
 
-			expect(fs.mkdirSync).toHaveBeenCalledWith("/tmp", {
-				recursive: true,
-			});
-			expect(fs.createWriteStream).toHaveBeenCalledWith("/tmp/test.log", {
+			expect(fsUtils.ensureFileDirectory).toHaveBeenCalledWith("/tmp/test.log");
+			expect(fsUtils.createWriteStream).toHaveBeenCalledWith("/tmp/test.log", {
 				flags: "a",
 			});
 		});
@@ -86,10 +101,8 @@ describe("FileTransport", () => {
 
 			const transport = new FileTransport(options);
 
-			expect(fs.mkdirSync).toHaveBeenCalledWith("/tmp", {
-				recursive: true,
-			});
-			expect(fs.createWriteStream).toHaveBeenCalledWith("/tmp/test.log", {
+			expect(fsUtils.ensureFileDirectory).toHaveBeenCalledWith("/tmp/test.log");
+			expect(fsUtils.createWriteStream).toHaveBeenCalledWith("/tmp/test.log", {
 				flags: "a",
 			});
 		});
@@ -164,7 +177,7 @@ describe("FileTransport", () => {
 			};
 
 			// 현재 파일 크기를 90으로 설정
-			vi.mocked(fs.statSync).mockReturnValue({ size: 90 } as any);
+			vi.mocked(fsUtils.getFileSize).mockReturnValue(90);
 
 			const transport = new FileTransport(options);
 
@@ -458,14 +471,14 @@ describe("FileTransport", () => {
 		});
 
 		it("파일 경로에 특수 문자가 있어도 처리합니다", () => {
-			vi.mocked(path.dirname).mockReturnValue("/tmp/logs with spaces");
-			vi.mocked(path.basename).mockReturnValue("app-name.log");
+			vi.mocked(fsUtils.getDirectory).mockReturnValue("/tmp/logs with spaces");
+			vi.mocked(fsUtils.getBaseName).mockReturnValue("app-name");
 
 			const transport = new FileTransport("/tmp/logs with spaces/app-name.log");
 
-			expect(fs.mkdirSync).toHaveBeenCalledWith("/tmp/logs with spaces", {
-				recursive: true,
-			});
+			expect(fsUtils.ensureFileDirectory).toHaveBeenCalledWith(
+				"/tmp/logs with spaces/app-name.log",
+			);
 		});
 	});
 });

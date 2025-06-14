@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { isLogLevelEnabled, getLogLevelPriority, isValidLogLevel } from "./log-level";
+import {
+	isLogLevelEnabled,
+	getLogLevelPriority,
+	isValidLogLevel,
+} from "./log-level";
 
 describe("Log Level Utils", () => {
 	describe("isLogLevelEnabled", () => {
@@ -14,10 +18,10 @@ describe("Log Level Utils", () => {
 			expect(isLogLevelEnabled("error", "debug")).toBe(true);
 			expect(isLogLevelEnabled("warn", "debug")).toBe(true);
 			expect(isLogLevelEnabled("info", "debug")).toBe(true);
-			
+
 			expect(isLogLevelEnabled("error", "info")).toBe(true);
 			expect(isLogLevelEnabled("warn", "info")).toBe(true);
-			
+
 			expect(isLogLevelEnabled("error", "warn")).toBe(true);
 		});
 
@@ -25,10 +29,10 @@ describe("Log Level Utils", () => {
 			expect(isLogLevelEnabled("debug", "info")).toBe(false);
 			expect(isLogLevelEnabled("debug", "warn")).toBe(false);
 			expect(isLogLevelEnabled("debug", "error")).toBe(false);
-			
+
 			expect(isLogLevelEnabled("info", "warn")).toBe(false);
 			expect(isLogLevelEnabled("info", "error")).toBe(false);
-			
+
 			expect(isLogLevelEnabled("warn", "error")).toBe(false);
 		});
 	});
@@ -71,11 +75,11 @@ describe("Log Level Utils", () => {
 
 		it("타입 가드로 작동해야 합니다", () => {
 			const testLevel: string = "info";
-			
+
 			if (isValidLogLevel(testLevel)) {
 				// 이 블록에서 testLevel은 LogLevel 타입으로 추론되어야 함
 				expect(getLogLevelPriority(testLevel)).toBe(20);
 			}
 		});
 	});
-}); 
+});

@@ -7,7 +7,10 @@ import { LOG_LEVEL_PRIORITY } from "../constants";
  * @param threshold - 기준 로그 레벨
  * @returns level이 threshold보다 높거나 같으면 true
  */
-export function isLogLevelEnabled(level: LogLevel, threshold: LogLevel): boolean {
+export function isLogLevelEnabled(
+	level: LogLevel,
+	threshold: LogLevel,
+): boolean {
 	return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[threshold];
 }
 
@@ -27,4 +30,4 @@ export function getLogLevelPriority(level: LogLevel): number {
  */
 export function isValidLogLevel(level: string): level is LogLevel {
 	return level in LOG_LEVEL_PRIORITY;
-} 
+}

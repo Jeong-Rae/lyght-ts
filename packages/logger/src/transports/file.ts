@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-import zlib from "zlib";
 import { Transport, LogLevel, Meta } from "../types";
 import { LogFormatter, DefaultFormatter } from "../formatters";
 import { globalBackgroundQueue } from "../utils/background-queue";
@@ -12,6 +9,19 @@ import {
 	GZIP_FILE_EXTENSION,
 	FILE_NUMBER_REGEX,
 } from "../constants";
+import {
+	exists,
+	getFileSize,
+	ensureFileDirectory,
+	createWriteStream,
+	listFiles,
+	deleteFile,
+	moveFile,
+	compressFile,
+	getDirectory,
+	getBaseName,
+	getExtension,
+} from "../utils/fs";
 
 export interface FileTransportOptions {
 	/** 로그 파일 경로 */
@@ -35,7 +45,7 @@ export class FileTransport implements Transport {
 	private readonly maxFiles: number;
 	private readonly compress: boolean;
 	private readonly formatter: LogFormatter;
-	private stream: fs.WriteStream;
+	private stream: NodeJS.WritableStream;
 	private currentFileSize: number = 0;
 	private isClosed: boolean = false;
 
@@ -55,20 +65,12 @@ export class FileTransport implements Transport {
 		}
 
 		// 디렉토리 생성
-		const dir = path.dirname(this.filePath);
-		if (!fs.existsSync(dir)) {
-			fs.mkdirSync(dir, { recursive: true });
-		}
+		ensureFileDirectory(this.filePath);
 
 		// 현재 파일 크기 확인
-		try {
-			const stats = fs.statSync(this.filePath);
-			this.currentFileSize = stats.size;
-		} catch (error) {
-			this.currentFileSize = 0;
-		}
+		this.currentFileSize = getFileSize(this.filePath);
 
-		this.stream = fs.createWriteStream(this.filePath, {
+		this.stream = createWriteStream(this.filePath, {
 			flags: FILE_APPEND_FLAG,
 		});
 	}
@@ -115,14 +117,14 @@ export class FileTransport implements Transport {
 			});
 
 			// 기존 파일들의 번호 확인
-			const dir = path.dirname(this.filePath);
-			const basename = path.basename(this.filePath);
-			const files = fs.readdirSync(dir);
+			const dir = getDirectory(this.filePath);
+			const basename = getBaseName(this.filePath) + getExtension(this.filePath);
+			const files = listFiles(dir);
 
 			const existingNumbers = files
-				.map((file) => this.extractFileNumber(file, basename))
+				.map((file: string) => this.extractFileNumber(file, basename))
 				.filter((num): num is number => num !== null)
-				.sort((a, b) => b - a);
+				.sort((a: number, b: number) => b - a);
 
 			// 파일 회전
 			for (const num of existingNumbers) {
@@ -131,30 +133,26 @@ export class FileTransport implements Transport {
 
 				if (num + 1 > this.maxFiles) {
 					// 최대 파일 수 초과 시 삭제
-					if (fs.existsSync(oldPath)) {
-						fs.unlinkSync(oldPath);
-					}
+					deleteFile(oldPath);
 				} else {
 					// 파일 이름 변경
-					if (fs.existsSync(oldPath)) {
-						fs.renameSync(oldPath, newPath);
-					}
+					moveFile(oldPath, newPath);
 				}
 			}
 
 			// 현재 파일을 .1로 이동
-			if (fs.existsSync(this.filePath)) {
+			if (exists(this.filePath)) {
 				const rotatedPath = this.getRotatedFilePath(1);
-				fs.renameSync(this.filePath, rotatedPath);
+				moveFile(this.filePath, rotatedPath);
 
 				// 압축 처리
 				if (this.compress) {
-					await this.compressFile(rotatedPath);
+					await compressFile(rotatedPath, { deleteOriginal: true });
 				}
 			}
 
 			// 새 스트림 생성
-			this.stream = fs.createWriteStream(this.filePath, {
+			this.stream = createWriteStream(this.filePath, {
 				flags: FILE_APPEND_FLAG,
 			});
 			this.currentFileSize = 0;
@@ -175,25 +173,6 @@ export class FileTransport implements Transport {
 	private getRotatedFilePath(number: number): string {
 		const extension = this.compress ? GZIP_FILE_EXTENSION : "";
 		return `${this.filePath}.${number}${extension}`;
-	}
-
-	private async compressFile(filePath: string): Promise<void> {
-		return new Promise((resolve, reject) => {
-			const gzipPath = `${filePath}${GZIP_FILE_EXTENSION}`;
-			const readStream = fs.createReadStream(filePath);
-			const writeStream = fs.createWriteStream(gzipPath);
-			const gzip = zlib.createGzip();
-
-			readStream
-				.pipe(gzip)
-				.pipe(writeStream)
-				.on("finish", () => {
-					// 원본 파일 삭제
-					fs.unlinkSync(filePath);
-					resolve();
-				})
-				.on("error", reject);
-		});
 	}
 
 	close(): void {

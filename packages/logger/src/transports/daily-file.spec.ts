@@ -3,9 +3,11 @@ import fs from "fs";
 import path from "path";
 import { DailyFileTransport, DailyFileTransportOptions } from "./daily-file";
 import { JsonFormatter, SimpleFormatter } from "../formatters";
+import * as fsUtils from "../utils/fs";
 
 vi.mock("fs");
 vi.mock("path");
+vi.mock("../utils/fs");
 
 describe("DailyFileTransport", () => {
 	let mockWriteStream: {
@@ -26,6 +28,15 @@ describe("DailyFileTransport", () => {
 		vi.mocked(fs.readdirSync).mockReturnValue([]);
 		vi.mocked(fs.unlinkSync).mockReturnValue(undefined);
 		vi.mocked(path.join).mockImplementation((...args) => args.join("/"));
+
+		// 파일시스템 유틸리티 모킹
+		vi.mocked(fsUtils.ensureDirectory).mockReturnValue(true);
+		vi.mocked(fsUtils.createWriteStream).mockReturnValue(
+			mockWriteStream as any,
+		);
+		vi.mocked(fsUtils.listFilesWithPattern).mockReturnValue([]);
+		vi.mocked(fsUtils.deleteFile).mockReturnValue(true);
+		vi.mocked(fsUtils.joinPath).mockImplementation((...args) => args.join("/"));
 	});
 
 	afterEach(() => {
@@ -40,9 +51,7 @@ describe("DailyFileTransport", () => {
 
 			new DailyFileTransport(options);
 
-			expect(fs.mkdirSync).toHaveBeenCalledWith("/tmp/logs", {
-				recursive: true,
-			});
+			expect(fsUtils.ensureDirectory).toHaveBeenCalledWith("/tmp/logs");
 		});
 
 		it("커스텀 옵션으로 초기화됩니다", () => {
@@ -55,9 +64,7 @@ describe("DailyFileTransport", () => {
 
 			new DailyFileTransport(options);
 
-			expect(fs.mkdirSync).toHaveBeenCalledWith("/var/logs", {
-				recursive: true,
-			});
+			expect(fsUtils.ensureDirectory).toHaveBeenCalledWith("/var/logs");
 		});
 
 		it("디렉토리가 이미 존재하면 생성하지 않습니다", () => {
@@ -85,7 +92,7 @@ describe("DailyFileTransport", () => {
 
 			transport.log("info", "test message", { userId: "123" });
 
-			expect(fs.createWriteStream).toHaveBeenCalledWith(
+			expect(fsUtils.createWriteStream).toHaveBeenCalledWith(
 				"/tmp/logs/app-2024-01-15.log",
 				{ flags: "a" },
 			);
@@ -102,7 +109,7 @@ describe("DailyFileTransport", () => {
 			vi.setSystemTime(new Date("2024-01-15T23:59:00.000Z"));
 			transport.log("info", "message 1");
 
-			expect(fs.createWriteStream).toHaveBeenCalledWith(
+			expect(fsUtils.createWriteStream).toHaveBeenCalledWith(
 				"/tmp/logs/service-2024-01-15.log",
 				{ flags: "a" },
 			);
@@ -111,7 +118,7 @@ describe("DailyFileTransport", () => {
 			vi.setSystemTime(new Date("2024-01-16T00:01:00.000Z"));
 			transport.log("info", "message 2");
 
-			expect(fs.createWriteStream).toHaveBeenCalledWith(
+			expect(fsUtils.createWriteStream).toHaveBeenCalledWith(
 				"/tmp/logs/service-2024-01-16.log",
 				{ flags: "a" },
 			);
@@ -144,12 +151,11 @@ describe("DailyFileTransport", () => {
 			vi.setSystemTime(mockDate);
 
 			// 오래된 파일들이 있다고 가정
-			vi.mocked(fs.readdirSync).mockReturnValue([
+			vi.mocked(fsUtils.listFilesWithPattern).mockReturnValue([
 				"app-2023-12-10.log", // 36일 전 (삭제되어야 함)
 				"app-2024-01-01.log", // 14일 전 (유지되어야 함)
 				"app-2024-01-14.log", // 1일 전 (유지되어야 함)
-				"other-file.txt", // 다른 파일 (무시)
-			] as any);
+			]);
 
 			new DailyFileTransport({
 				logDirectory: "/tmp/logs",
@@ -158,10 +164,10 @@ describe("DailyFileTransport", () => {
 			});
 
 			// 30일보다 오래된 파일만 삭제되어야 함
-			expect(fs.unlinkSync).toHaveBeenCalledWith(
+			expect(fsUtils.deleteFile).toHaveBeenCalledWith(
 				"/tmp/logs/app-2023-12-10.log",
 			);
-			expect(fs.unlinkSync).toHaveBeenCalledTimes(1);
+			expect(fsUtils.deleteFile).toHaveBeenCalledTimes(1);
 		});
 
 		it("수동 정리를 실행할 수 있습니다", () => {
@@ -170,11 +176,13 @@ describe("DailyFileTransport", () => {
 				maxDays: 7,
 			});
 
-			vi.mocked(fs.readdirSync).mockReturnValue(["app-2024-01-01.log"] as any);
+			vi.mocked(fsUtils.listFilesWithPattern).mockReturnValue([
+				"app-2024-01-01.log",
+			]);
 
 			transport.manualCleanup();
 
-			expect(fs.readdirSync).toHaveBeenCalledWith("/tmp/logs");
+			expect(fsUtils.listFilesWithPattern).toHaveBeenCalled();
 		});
 
 		it("파일 정리 중 에러가 발생해도 계속 동작합니다", () => {
@@ -233,15 +241,15 @@ describe("DailyFileTransport", () => {
 				transport.log("info", `message ${index}`);
 			});
 
-			expect(fs.createWriteStream).toHaveBeenCalledWith(
+			expect(fsUtils.createWriteStream).toHaveBeenCalledWith(
 				"/tmp/logs/test-2024-01-01.log",
 				{ flags: "a" },
 			);
-			expect(fs.createWriteStream).toHaveBeenCalledWith(
+			expect(fsUtils.createWriteStream).toHaveBeenCalledWith(
 				"/tmp/logs/test-2024-12-31.log",
 				{ flags: "a" },
 			);
-			expect(fs.createWriteStream).toHaveBeenCalledWith(
+			expect(fsUtils.createWriteStream).toHaveBeenCalledWith(
 				"/tmp/logs/test-2024-02-29.log",
 				{ flags: "a" },
 			);
