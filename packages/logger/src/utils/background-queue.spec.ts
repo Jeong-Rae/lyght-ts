@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BackgroundQueue, globalBackgroundQueue } from "./background-queue";
+import * as constants from "../constants";
 
 describe("BackgroundQueue", () => {
 	let queue: BackgroundQueue;
@@ -58,15 +59,33 @@ describe("BackgroundQueue", () => {
 			expect(queue.size).toBe(0);
 		});
 
-		it("최대 큐 크기를 초과하면 오래된 작업을 제거합니다", () => {
-			// 1001개의 작업을 추가 (MAX_QUEUE_SIZE = 1000)
-			for (let i = 0; i < 1001; i++) {
+		it("최대 큐 크기를 초과하면 오래된 작업을 제거합니다", async () => {
+			// 1001개의 작업을 추가하여 큐 오버플로우 테스트
+			const tasks: any[] = [];
+
+			// 첫 번째 작업은 긴 작업으로 설정하여 큐에 작업들이 쌓이도록 함
+			const longTask = vi.fn().mockImplementation(async () => {
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			});
+
+			queue.enqueue(longTask);
+			tasks.push(longTask);
+
+			// 1000개의 추가 작업을 빠르게 추가
+			for (let i = 0; i < 1000; i++) {
 				const task = vi.fn().mockResolvedValue(undefined);
 				queue.enqueue(task);
+				tasks.push(task);
 			}
 
-			// 큐 크기가 최대값을 초과하지 않아야 함 (처리 중인 것 제외)
+			// 하나 더 추가하여 오버플로우 발생
+			const overflowTask = vi.fn().mockResolvedValue(undefined);
+			queue.enqueue(overflowTask);
+
+			// 큐 크기가 최대값을 초과하지 않아야 함
 			expect(queue.size).toBeLessThanOrEqual(1000);
+
+			await vi.runAllTimersAsync();
 		});
 
 		it("작업 추가 시 즉시 처리를 시작합니다", async () => {
@@ -151,6 +170,43 @@ describe("BackgroundQueue", () => {
 			// 모든 작업이 처리되었지만 순차적으로 처리되었는지 확인
 			expect(processingCount).toBe(2);
 			expect(queue.isProcessing).toBe(false);
+		});
+
+		it("BACKGROUND_QUEUE_DELAY가 0보다 클 때 지연을 적용합니다", async () => {
+			// constants를 스파이하여 BACKGROUND_QUEUE_DELAY 값을 변경
+			const constantsSpy = vi
+				.spyOn(constants, "BACKGROUND_QUEUE_DELAY", "get")
+				// @ts-ignore - test code
+				.mockReturnValue(10);
+
+			const task1 = vi.fn().mockResolvedValue(undefined);
+			const task2 = vi.fn().mockResolvedValue(undefined);
+
+			queue.enqueue(task1);
+			queue.enqueue(task2);
+
+			await vi.runAllTimersAsync();
+
+			expect(task1).toHaveBeenCalled();
+			expect(task2).toHaveBeenCalled();
+
+			constantsSpy.mockRestore();
+		});
+
+		it("undefined task를 안전하게 처리합니다", async () => {
+			// queue의 내부 배열을 직접 조작하여 undefined 추가
+			const task = vi.fn().mockResolvedValue(undefined);
+
+			// 정상 작업 추가
+			queue.enqueue(task);
+
+			// 내부 큐에 undefined 직접 추가 (shift가 undefined를 반환하는 상황 시뮬레이션)
+			(queue as any).queue.unshift(undefined);
+
+			await vi.runAllTimersAsync();
+
+			// undefined task가 있어도 정상 작업은 처리되어야 함
+			expect(task).toHaveBeenCalled();
 		});
 	});
 
