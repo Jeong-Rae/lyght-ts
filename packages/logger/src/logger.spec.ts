@@ -28,6 +28,7 @@ describe("Logger", () => {
 	describe("getLevel", () => {
 		it("환경변수에서 로그 레벨을 가져옵니다", () => {
 			process.env.LOG_LEVEL = "warn";
+			Logger.setLevel("warn");
 			Logger.useTransports(mockTransport);
 
 			Logger.info("test message");
@@ -38,18 +39,24 @@ describe("Logger", () => {
 				"warn",
 				"test message",
 				{},
+				expect.any(Date),
 			);
 		});
 
-		it("잘못된 로그 레벨일 때 기본값(debug)을 사용합니다", () => {
+		it("잘못된 로그 레벨일 때 기본값(info)을 사용합니다", () => {
 			process.env.LOG_LEVEL = "invalid";
+			Logger.setLevel("info");
 			Logger.useTransports(mockTransport);
 
 			Logger.debug("test message");
+			expect(mockTransport.log).not.toHaveBeenCalled();
+
+			Logger.info("test message");
 			expect(mockTransport.log).toHaveBeenCalledWith(
-				"debug",
+				"info",
 				"test message",
 				{},
+				expect.any(Date),
 			);
 		});
 	});
@@ -57,6 +64,7 @@ describe("Logger", () => {
 	describe("shouldLog", () => {
 		it("현재 로그 레벨보다 높은 레벨의 로그를 출력합니다", () => {
 			process.env.LOG_LEVEL = "warn";
+			Logger.setLevel("warn");
 			Logger.useTransports(mockTransport);
 
 			Logger.debug("debug message");
@@ -74,11 +82,22 @@ describe("Logger", () => {
 			const transport1 = { log: vi.fn() };
 			const transport2 = { log: vi.fn() };
 
+			Logger.setLevel("info");
 			Logger.useTransports(transport1, transport2);
 			Logger.info("test message");
 
-			expect(transport1.log).toHaveBeenCalledWith("info", "test message", {});
-			expect(transport2.log).toHaveBeenCalledWith("info", "test message", {});
+			expect(transport1.log).toHaveBeenCalledWith(
+				"info",
+				"test message",
+				{},
+				expect.any(Date),
+			);
+			expect(transport2.log).toHaveBeenCalledWith(
+				"info",
+				"test message",
+				{},
+				expect.any(Date),
+			);
 		});
 	});
 
@@ -86,6 +105,7 @@ describe("Logger", () => {
 		it("debug 레벨 로그를 출력합니다", () => {
 			// debug 레벨로 설정
 			process.env.LOG_LEVEL = "debug";
+			Logger.setLevel("debug");
 			Logger.useTransports(mockTransport);
 
 			const meta = { userId: "123" };
@@ -95,11 +115,13 @@ describe("Logger", () => {
 				"debug",
 				"debug message",
 				meta,
+				expect.any(Date),
 			);
 		});
 
 		it("meta 없이 debug 로그를 출력합니다", () => {
 			process.env.LOG_LEVEL = "debug";
+			Logger.setLevel("debug");
 			Logger.useTransports(mockTransport);
 
 			Logger.debug("debug message");
@@ -108,6 +130,7 @@ describe("Logger", () => {
 				"debug",
 				"debug message",
 				{},
+				expect.any(Date),
 			);
 		});
 	});
@@ -115,6 +138,7 @@ describe("Logger", () => {
 	describe("info", () => {
 		it("info 레벨 로그를 출력합니다", () => {
 			process.env.LOG_LEVEL = "debug";
+			Logger.setLevel("debug");
 			Logger.useTransports(mockTransport);
 
 			const meta = { requestId: "abc123" };
@@ -124,6 +148,7 @@ describe("Logger", () => {
 				"info",
 				"info message",
 				meta,
+				expect.any(Date),
 			);
 		});
 	});
@@ -137,6 +162,7 @@ describe("Logger", () => {
 				"warn",
 				"warn message",
 				meta,
+				expect.any(Date),
 			);
 		});
 	});
@@ -150,6 +176,7 @@ describe("Logger", () => {
 				"error",
 				"error message",
 				meta,
+				expect.any(Date),
 			);
 		});
 
@@ -162,7 +189,13 @@ describe("Logger", () => {
 			expect(mockTransport.log).toHaveBeenCalledWith(
 				"error",
 				"Something went wrong",
-				{ context: "database operation", error },
+				{
+					context: "database operation",
+					name: "Error",
+					message: "Something went wrong",
+					stack: expect.any(String),
+				},
+				expect.any(Date),
 			);
 		});
 
@@ -174,7 +207,12 @@ describe("Logger", () => {
 			expect(mockTransport.log).toHaveBeenCalledWith(
 				"error",
 				"Something went wrong",
-				{ error },
+				{
+					name: "Error",
+					message: "Something went wrong",
+					stack: expect.any(String),
+				},
+				expect.any(Date),
 			);
 		});
 	});

@@ -208,7 +208,7 @@ describe("FileTransport", () => {
 				formatter: new SimpleFormatter(),
 			});
 
-			transport.log("warn", "warning message", { code: 404 });
+			transport.log("warn", "warning message", { code: 404 }, mockDate);
 
 			const writeCall = mockWriteStream.write.mock.calls[0][0];
 			expect(writeCall).toContain("12:30:45 warn ");

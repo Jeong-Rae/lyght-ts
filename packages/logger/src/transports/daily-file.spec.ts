@@ -129,7 +129,7 @@ describe("DailyFileTransport", () => {
 				formatter: new SimpleFormatter(),
 			});
 
-			transport.log("warn", "warning message", { code: 404 });
+			transport.log("warn", "warning message", { code: 404 }, mockDate);
 
 			// SimpleFormatter 형식으로 작성되었는지 확인
 			const writeCall = mockWriteStream.write.mock.calls[0][0];

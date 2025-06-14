@@ -1,47 +1,123 @@
-import { LOG_LEVELS, LogLevel, Meta, Transport } from "./types";
+import { LogLevel, Transport, Meta } from "./types";
+import { now } from "./utils/datetime";
 
+/**
+ * 로그 레벨 우선순위 매핑
+ */
+const LOG_LEVELS: Record<LogLevel, number> = {
+	debug: 0,
+	info: 1,
+	warn: 2,
+	error: 3,
+};
+
+/**
+ * 메인 Logger 클래스
+ */
 export class Logger {
+	private static logLevel: LogLevel = "info";
 	private static transports: Transport[] = [];
 
-	private static getLevel(): LogLevel {
-		const level = process.env.LOG_LEVEL as LogLevel | undefined;
-		return LOG_LEVELS.includes(level as LogLevel)
-			? (level as LogLevel)
-			: LOG_LEVELS[0];
+	/**
+	 * 환경변수에서 로그 레벨을 설정합니다.
+	 */
+	static {
+		const envLogLevel = process.env.LOG_LEVEL?.toLowerCase() as LogLevel;
+		if (envLogLevel && envLogLevel in LOG_LEVELS) {
+			Logger.logLevel = envLogLevel;
+		}
 	}
 
-	private static shouldLog(level: LogLevel): boolean {
-		const current = this.getLevel();
-		return LOG_LEVELS.indexOf(level) >= LOG_LEVELS.indexOf(current);
+	/**
+	 * 로그 레벨을 설정합니다.
+	 */
+	static setLevel(level: LogLevel): void {
+		Logger.logLevel = level;
 	}
 
-	static useTransports(...args: Transport[]) {
-		this.transports = args;
+	/**
+	 * 현재 로그 레벨을 반환합니다.
+	 */
+	static getLevel(): LogLevel {
+		return Logger.logLevel;
 	}
 
-	private static log(level: LogLevel, message: string, meta: Meta = {}) {
-		if (!this.shouldLog(level)) return;
-		this.transports.forEach((transport) => transport.log(level, message, meta));
+	/**
+	 * Transport를 추가합니다.
+	 */
+	static useTransports(...transports: Transport[]): void {
+		Logger.transports = transports;
 	}
 
-	static debug(message: string, meta?: Meta) {
-		this.log("debug", message, meta);
+	/**
+	 * 현재 설정된 Transport 목록을 반환합니다.
+	 */
+	static getTransports(): Transport[] {
+		return [...Logger.transports];
 	}
 
-	static info(message: string, meta?: Meta) {
-		this.log("info", message, meta);
+	/**
+	 * 지정된 레벨의 로그를 출력할지 확인합니다.
+	 */
+	static shouldLog(level: LogLevel): boolean {
+		return LOG_LEVELS[level] >= LOG_LEVELS[Logger.logLevel];
 	}
 
-	static warn(message: string, meta?: Meta) {
-		this.log("warn", message, meta);
+	/**
+	 * 로그를 출력합니다.
+	 */
+	private static log(level: LogLevel, message: string, meta: Meta = {}): void {
+		if (!Logger.shouldLog(level)) {
+			return;
+		}
+
+		const timestamp = now();
+
+		// 모든 transport에 로그 전송
+		Logger.transports.forEach((transport) => {
+			try {
+				transport.log(level, message, meta, timestamp);
+			} catch (error) {
+				// Transport 에러는 무시 (무한 루프 방지)
+			}
+		});
 	}
 
-	static error(errOrMsg: string | Error, meta: Meta = {}) {
-		const message = errOrMsg instanceof Error ? errOrMsg.message : errOrMsg;
-		const finalMeta = {
-			...meta,
-			...(errOrMsg instanceof Error ? { error: errOrMsg } : {}),
-		};
-		this.log("error", message, finalMeta);
+	/**
+	 * DEBUG 레벨 로그를 출력합니다.
+	 */
+	static debug(message: string, meta: Meta = {}): void {
+		Logger.log("debug", message, meta);
+	}
+
+	/**
+	 * INFO 레벨 로그를 출력합니다.
+	 */
+	static info(message: string, meta: Meta = {}): void {
+		Logger.log("info", message, meta);
+	}
+
+	/**
+	 * WARN 레벨 로그를 출력합니다.
+	 */
+	static warn(message: string, meta: Meta = {}): void {
+		Logger.log("warn", message, meta);
+	}
+
+	/**
+	 * ERROR 레벨 로그를 출력합니다.
+	 */
+	static error(errOrMsg: string | Error, meta: Meta = {}): void {
+		if (errOrMsg instanceof Error) {
+			const errorMeta = {
+				name: errOrMsg.name,
+				message: errOrMsg.message,
+				stack: errOrMsg.stack,
+				...meta,
+			};
+			Logger.log("error", errOrMsg.message, errorMeta);
+		} else {
+			Logger.log("error", errOrMsg, meta);
+		}
 	}
 }

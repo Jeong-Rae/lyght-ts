@@ -1,10 +1,18 @@
-export const LOG_LEVELS = ["debug", "info", "warn", "error"] as const;
-export type LogLevel = (typeof LOG_LEVELS)[number];
+/**
+ * 로그 레벨 타입
+ */
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
-export type Meta = Record<string, unknown>;
+/**
+ * 메타데이터 타입
+ */
+export type Meta = Record<string, any>;
 
+/**
+ * Transport 인터페이스
+ */
 export interface Transport {
-	log(level: LogLevel, message: string, meta?: Meta): void;
+	log(level: LogLevel, message: string, meta?: Meta, timestamp?: Date): void;
 }
 
 export interface ApmClient {

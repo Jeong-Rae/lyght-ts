@@ -1,160 +1,181 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ApmTransport } from "./apm";
-import { ApmClient, LogLevel } from "../types";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ApmTransport, ApmTransportOptions } from "./apm";
+
+// APM 클라이언트 모킹
+const mockApmClient = {
+	captureException: vi.fn(),
+	captureMessage: vi.fn(),
+};
 
 describe("ApmTransport", () => {
-	let mockApmClient: ApmClient;
-	let apmTransport: ApmTransport;
+	let transport: ApmTransport;
 
 	beforeEach(() => {
-		mockApmClient = {
-			captureException: vi.fn(),
-			captureMessage: vi.fn(),
-		};
-		apmTransport = new ApmTransport(mockApmClient);
-	});
-
-	afterEach(() => {
 		vi.clearAllMocks();
+		const options: ApmTransportOptions = {
+			apmClient: mockApmClient,
+		};
+		transport = new ApmTransport(options);
 	});
 
 	describe("constructor", () => {
-		it("ApmClient를 받아서 인스턴스를 생성합니다", () => {
-			const transport = new ApmTransport(mockApmClient);
-			expect(transport).toBeInstanceOf(ApmTransport);
+		it("기본 captureLevel을 error로 설정합니다", () => {
+			const options: ApmTransportOptions = {
+				apmClient: mockApmClient,
+			};
+			const transport = new ApmTransport(options);
+
+			// error 레벨은 캡처되어야 함
+			transport.log("error", "test error");
+			expect(mockApmClient.captureMessage).toHaveBeenCalled();
+
+			// warn 레벨은 캡처되지 않아야 함
+			vi.clearAllMocks();
+			transport.log("warn", "test warning");
+			expect(mockApmClient.captureMessage).not.toHaveBeenCalled();
+		});
+
+		it("커스텀 captureLevel을 설정할 수 있습니다", () => {
+			const options: ApmTransportOptions = {
+				apmClient: mockApmClient,
+				captureLevel: "warn",
+			};
+			const transport = new ApmTransport(options);
+
+			// warn 레벨도 캡처되어야 함
+			transport.log("warn", "test warning");
+			expect(mockApmClient.captureMessage).toHaveBeenCalled();
+
+			// info 레벨은 캡처되지 않아야 함
+			vi.clearAllMocks();
+			transport.log("info", "test info");
+			expect(mockApmClient.captureMessage).not.toHaveBeenCalled();
 		});
 	});
 
 	describe("log", () => {
-		it("error 레벨이고 meta에 error가 있을 때 captureException을 호출합니다", () => {
-			const error = new Error("Something went wrong");
-			const meta = { error, context: "user action" };
-
-			apmTransport.log("error", "error message", meta);
-
-			expect(mockApmClient.captureException).toHaveBeenCalledWith(error);
-			expect(mockApmClient.captureMessage).not.toHaveBeenCalled();
-		});
-
-		it("error 레벨이지만 meta에 error가 없을 때 captureMessage를 호출합니다", () => {
-			const meta = { context: "database operation" };
-
-			apmTransport.log("error", "error message", meta);
+		it("error 레벨 로그를 APM에 전송합니다", () => {
+			const testDate = new Date("2024-01-15T12:30:45.123Z");
+			transport.log("error", "test error message", {}, testDate);
 
 			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"error message",
-				{ level: "error" },
+				"test error message",
+				{
+					level: "error",
+					timestamp: "2024-01-15T12:30:45.123Z",
+				},
 			);
-			expect(mockApmClient.captureException).not.toHaveBeenCalled();
 		});
 
-		it("error 레벨이지만 meta가 없을 때 captureMessage를 호출합니다", () => {
-			apmTransport.log("error", "error message");
+		it("Error 객체가 있으면 exception으로 전송합니다", () => {
+			const testError = new Error("Test error");
+			const testDate = new Date("2024-01-15T12:30:45.123Z");
+			const meta = { error: testError, userId: "123" };
 
-			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"error message",
-				{ level: "error" },
-			);
-			expect(mockApmClient.captureException).not.toHaveBeenCalled();
-		});
+			transport.log("error", "error occurred", meta, testDate);
 
-		it("debug 레벨 로그에 대해 captureMessage를 호출합니다", () => {
-			const meta = { userId: "123" };
-
-			apmTransport.log("debug", "debug message", meta);
-
-			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"debug message",
-				{ level: "debug" },
-			);
-			expect(mockApmClient.captureException).not.toHaveBeenCalled();
-		});
-
-		it("info 레벨 로그에 대해 captureMessage를 호출합니다", () => {
-			const meta = { requestId: "abc123" };
-
-			apmTransport.log("info", "info message", meta);
-
-			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"info message",
-				{ level: "info" },
-			);
-			expect(mockApmClient.captureException).not.toHaveBeenCalled();
-		});
-
-		it("warn 레벨 로그에 대해 captureMessage를 호출합니다", () => {
-			apmTransport.log("warn", "warning message");
-
-			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"warning message",
-				{ level: "warn" },
-			);
-			expect(mockApmClient.captureException).not.toHaveBeenCalled();
-		});
-
-		it("meta에 error가 있으면 타입에 관계없이 captureException을 호출합니다", () => {
-			const meta = { error: "string error", context: "test" };
-
-			apmTransport.log("error", "error message", meta);
-
-			expect(mockApmClient.captureException).toHaveBeenCalledWith(
-				"string error",
-			);
-			expect(mockApmClient.captureMessage).not.toHaveBeenCalled();
-		});
-
-		it("meta에 Error 객체가 있을 때만 captureException을 호출합니다", () => {
-			const actualError = new Error("Actual error object");
-			const meta = {
-				error: actualError,
-				otherError: "string error",
-				context: "test",
-			};
-
-			apmTransport.log("error", "error message", meta);
-
-			expect(mockApmClient.captureException).toHaveBeenCalledWith(actualError);
-			expect(mockApmClient.captureMessage).not.toHaveBeenCalled();
-		});
-
-		it("모든 로그 레벨에 대해 올바른 level 파라미터를 전달합니다", () => {
-			const testCases: LogLevel[] = ["debug", "info", "warn", "error"];
-
-			testCases.forEach((level) => {
-				apmTransport.log(level, `${level} message`);
+			expect(mockApmClient.captureException).toHaveBeenCalledWith(testError, {
+				error: testError,
+				userId: "123",
+				level: "error",
+				timestamp: "2024-01-15T12:30:45.123Z",
 			});
+		});
+
+		it("메타데이터와 함께 로그를 전송합니다", () => {
+			const testDate = new Date("2024-01-15T12:30:45.123Z");
+			const meta = { userId: "123", action: "login" };
+
+			transport.log("error", "login failed", meta, testDate);
 
 			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"debug message",
-				{ level: "debug" },
-			);
-			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"info message",
-				{ level: "info" },
-			);
-			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"warn message",
-				{ level: "warn" },
-			);
-			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"error message",
-				{ level: "error" },
+				"login failed",
+				{
+					userId: "123",
+					action: "login",
+					level: "error",
+					timestamp: "2024-01-15T12:30:45.123Z",
+				},
 			);
 		});
 
-		it("복잡한 meta 객체와 함께 동작합니다", () => {
-			const complexMeta = {
-				user: { id: 123, name: "John Doe" },
-				context: { action: "login", timestamp: "2024-01-01" },
-				tags: ["auth", "security"],
-				metadata: { source: "web", device: "desktop" },
-			};
+		it("captureLevel 미만의 로그는 무시합니다", () => {
+			transport.log("debug", "debug message");
+			transport.log("info", "info message");
+			transport.log("warn", "warn message");
 
-			apmTransport.log("info", "complex log entry", complexMeta);
+			expect(mockApmClient.captureMessage).not.toHaveBeenCalled();
+			expect(mockApmClient.captureException).not.toHaveBeenCalled();
+		});
+
+		it("captureLevel 이상의 로그만 전송합니다", () => {
+			const options: ApmTransportOptions = {
+				apmClient: mockApmClient,
+				captureLevel: "warn",
+			};
+			const transport = new ApmTransport(options);
+
+			transport.log("debug", "debug message");
+			transport.log("info", "info message");
+			expect(mockApmClient.captureMessage).not.toHaveBeenCalled();
+
+			transport.log("warn", "warn message");
+			expect(mockApmClient.captureMessage).toHaveBeenCalledTimes(1);
+
+			transport.log("error", "error message");
+			expect(mockApmClient.captureMessage).toHaveBeenCalledTimes(2);
+		});
+
+		it("기본 timestamp를 사용할 수 있습니다", () => {
+			const mockDate = new Date("2024-01-15T12:30:45.123Z");
+			vi.setSystemTime(mockDate);
+
+			transport.log("error", "test message");
 
 			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
-				"complex log entry",
-				{ level: "info" },
+				"test message",
+				{
+					level: "error",
+					timestamp: "2024-01-15T12:30:45.123Z",
+				},
+			);
+
+			vi.useRealTimers();
+		});
+
+		it("빈 메타데이터를 처리합니다", () => {
+			const testDate = new Date("2024-01-15T12:30:45.123Z");
+
+			transport.log("error", "test message", {}, testDate);
+
+			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
+				"test message",
+				{
+					level: "error",
+					timestamp: "2024-01-15T12:30:45.123Z",
+				},
+			);
+		});
+
+		it("복잡한 메타데이터를 처리합니다", () => {
+			const testDate = new Date("2024-01-15T12:30:45.123Z");
+			const complexMeta = {
+				user: { id: 123, name: "John" },
+				request: { method: "POST", url: "/api/login" },
+				nested: { deep: { value: true } },
+			};
+
+			transport.log("error", "complex error", complexMeta, testDate);
+
+			expect(mockApmClient.captureMessage).toHaveBeenCalledWith(
+				"complex error",
+				{
+					user: { id: 123, name: "John" },
+					request: { method: "POST", url: "/api/login" },
+					nested: { deep: { value: true } },
+					level: "error",
+					timestamp: "2024-01-15T12:30:45.123Z",
+				},
 			);
 		});
 	});

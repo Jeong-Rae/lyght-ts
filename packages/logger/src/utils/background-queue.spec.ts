@@ -164,7 +164,7 @@ describe("BackgroundQueue", () => {
 			});
 
 			queue.enqueue(longTask);
-			
+
 			// 추가 작업들 (큐에 쌓임)
 			queue.enqueue(vi.fn().mockResolvedValue(undefined));
 			queue.enqueue(vi.fn().mockResolvedValue(undefined));
@@ -180,7 +180,7 @@ describe("BackgroundQueue", () => {
 			const task = vi.fn().mockResolvedValue(undefined);
 
 			queue.enqueue(task);
-			
+
 			// 즉시 처리가 시작되므로 size는 0이 됨
 			await vi.runAllTimersAsync();
 			expect(queue.size).toBe(0);
@@ -251,7 +251,9 @@ describe("BackgroundQueue", () => {
 
 	describe("edge cases", () => {
 		it("빈 큐에서 처리를 시도해도 에러가 발생하지 않습니다", async () => {
-			expect(() => queue.enqueue(vi.fn().mockResolvedValue(undefined))).not.toThrow();
+			expect(() =>
+				queue.enqueue(vi.fn().mockResolvedValue(undefined)),
+			).not.toThrow();
 			await vi.runAllTimersAsync();
 		});
 
@@ -289,4 +291,4 @@ describe("globalBackgroundQueue", () => {
 
 		expect(task).toHaveBeenCalled();
 	});
-}); 
+});

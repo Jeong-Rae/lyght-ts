@@ -24,12 +24,10 @@ describe("ConsoleTransport", () => {
 			vi.setSystemTime(mockDate);
 
 			const meta = { userId: "123" };
-			consoleTransport.log("debug", "debug message", meta);
+			consoleTransport.log("debug", "debug message", meta, mockDate);
 
 			expect(console.debug).toHaveBeenCalledWith(
-				"[2024-01-01T00:00:00.000Z] [DEBUG]",
-				"debug message",
-				meta,
+				'2024-01-01T00:00:00.000Z [DEBUG] debug message {"userId":"123"}',
 			);
 		});
 
@@ -38,12 +36,10 @@ describe("ConsoleTransport", () => {
 			vi.setSystemTime(mockDate);
 
 			const meta = { requestId: "abc123" };
-			consoleTransport.log("info", "info message", meta);
+			consoleTransport.log("info", "info message", meta, mockDate);
 
 			expect(console.info).toHaveBeenCalledWith(
-				"[2024-01-01T12:30:45.123Z] [INFO]",
-				"info message",
-				meta,
+				'2024-01-01T12:30:45.123Z [INFO] info message {"requestId":"abc123"}',
 			);
 		});
 
@@ -51,12 +47,10 @@ describe("ConsoleTransport", () => {
 			const mockDate = new Date("2024-01-01T09:15:30.456Z");
 			vi.setSystemTime(mockDate);
 
-			consoleTransport.log("warn", "warning message");
+			consoleTransport.log("warn", "warning message", {}, mockDate);
 
 			expect(console.warn).toHaveBeenCalledWith(
-				"[2024-01-01T09:15:30.456Z] [WARN]",
-				"warning message",
-				{},
+				"2024-01-01T09:15:30.456Z [WARN] warning message {}",
 			);
 		});
 
@@ -65,12 +59,10 @@ describe("ConsoleTransport", () => {
 			vi.setSystemTime(mockDate);
 
 			const meta = { errorCode: "E001", severity: "high" };
-			consoleTransport.log("error", "error message", meta);
+			consoleTransport.log("error", "error message", meta, mockDate);
 
 			expect(console.error).toHaveBeenCalledWith(
-				"[2024-01-01T18:45:00.789Z] [ERROR]",
-				"error message",
-				meta,
+				'2024-01-01T18:45:00.789Z [ERROR] error message {"errorCode":"E001","severity":"high"}',
 			);
 		});
 
@@ -78,12 +70,10 @@ describe("ConsoleTransport", () => {
 			const mockDate = new Date("2024-01-01T00:00:00.000Z");
 			vi.setSystemTime(mockDate);
 
-			consoleTransport.log("info", "simple message");
+			consoleTransport.log("info", "simple message", undefined, mockDate);
 
 			expect(console.info).toHaveBeenCalledWith(
-				"[2024-01-01T00:00:00.000Z] [INFO]",
-				"simple message",
-				{},
+				"2024-01-01T00:00:00.000Z [INFO] simple message {}",
 			);
 		});
 
@@ -99,28 +89,20 @@ describe("ConsoleTransport", () => {
 			];
 
 			testCases.forEach(([level, message]) => {
-				consoleTransport.log(level, message);
+				consoleTransport.log(level, message, {}, mockDate);
 			});
 
 			expect(console.debug).toHaveBeenCalledWith(
-				"[2024-01-01T00:00:00.000Z] [DEBUG]",
-				"debug test",
-				{},
+				"2024-01-01T00:00:00.000Z [DEBUG] debug test {}",
 			);
 			expect(console.info).toHaveBeenCalledWith(
-				"[2024-01-01T00:00:00.000Z] [INFO]",
-				"info test",
-				{},
+				"2024-01-01T00:00:00.000Z [INFO] info test {}",
 			);
 			expect(console.warn).toHaveBeenCalledWith(
-				"[2024-01-01T00:00:00.000Z] [WARN]",
-				"warn test",
-				{},
+				"2024-01-01T00:00:00.000Z [WARN] warn test {}",
 			);
 			expect(console.error).toHaveBeenCalledWith(
-				"[2024-01-01T00:00:00.000Z] [ERROR]",
-				"error test",
-				{},
+				"2024-01-01T00:00:00.000Z [ERROR] error test {}",
 			);
 		});
 
@@ -138,12 +120,10 @@ describe("ConsoleTransport", () => {
 				tags: ["auth", "security"],
 			};
 
-			consoleTransport.log("info", "user action", complexMeta);
+			consoleTransport.log("info", "user action", complexMeta, mockDate);
 
 			expect(console.info).toHaveBeenCalledWith(
-				"[2024-01-01T00:00:00.000Z] [INFO]",
-				"user action",
-				complexMeta,
+				'2024-01-01T00:00:00.000Z [INFO] user action {"user":{"id":123,"name":"John Doe"},"context":{"action":"login","timestamp":"2024-01-01T00:00:00.000Z","metadata":{"source":"web","device":"desktop"}},"tags":["auth","security"]}',
 			);
 		});
 	});
