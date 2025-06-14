@@ -1,45 +1,45 @@
 {
-	"name": "logger",
-	"version": "1.0.0",
-	"description": "",
-	"main": "index.js",
-	"exports": {
-		".": {
-			"import": {
-				"types": "./dist/index.d.mts",
-				"default": "./dist/index.mjs"
-			},
-			"require": {
-				"types": "./dist/index.d.ts",
-				"default": "./dist/index.js"
-			}
-		},
-		"./package.json": "./package.json"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"typecheck": "tsc --noEmit",
-		"prepack": "pnpm build",
-		"build": "tsup",
-		"test": "vitest --coverage --typecheck",
-		"bench": "vitest bench",
-		"lint": "biome check .",
-		"format": "biome format --write ."
-	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"packageManager": "pnpm@10.10.0",
-	"sideEffects": false,
-	"devDependencies": {
-		"@biomejs/biome": "1.9.4",
-		"@types/node": "^24.0.1",
-		"@vitest/coverage-istanbul": "^3.2.3",
-		"tslib": "^2.8.1",
-		"tsup": "^8.5.0",
-		"typescript": "^5.8.3",
-		"vitest": "^3.2.3"
-	}
+    "name": "@lyght/logger",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.mts",
+                "default": "./dist/index.mjs"
+            },
+            "require": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            }
+        },
+        "./package.json": "./package.json"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "prepack": "pnpm build",
+        "build": "tsup",
+        "test": "vitest --coverage --typecheck",
+        "bench": "vitest bench",
+        "lint": "biome check .",
+        "format": "biome format --write ."
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "packageManager": "pnpm@10.10.0",
+    "sideEffects": false,
+    "devDependencies": {
+        "@biomejs/biome": "1.9.4",
+        "@types/node": "^24.0.1",
+        "@vitest/coverage-istanbul": "^3.2.3",
+        "tslib": "^2.8.1",
+        "tsup": "^8.5.0",
+        "typescript": "^5.8.3",
+        "vitest": "^3.2.3"
+    }
 }
