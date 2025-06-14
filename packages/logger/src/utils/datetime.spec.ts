@@ -267,5 +267,40 @@ describe("datetime utilities", () => {
 			const result = formatDate(testDate, "invalid-format");
 			expect(result).toBe("2024-01-15T12:30:45.123Z");
 		});
+
+		it("기본 매개변수를 사용하는 함수들을 테스트합니다", () => {
+			// toDateTimeString 기본 매개변수 테스트
+			const result1 = toDateTimeString();
+			expect(result1).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+
+			// toLocalTimeString 기본 매개변수 테스트
+			const result2 = toLocalTimeString();
+			expect(result2).toMatch(/^\d{2}:\d{2}:\d{2}$/);
+
+			// toLocalDateString 기본 매개변수 테스트
+			const result3 = toLocalDateString();
+			expect(result3).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+			// toLocalDateTimeString 기본 매개변수 테스트
+			const result4 = toLocalDateTimeString();
+			expect(result4).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+
+			// timestamp 기본 매개변수 테스트
+			const result5 = timestamp();
+			expect(typeof result5).toBe("number");
+		});
+
+		it("isOlderThan은 기본 referenceDate를 사용할 수 있습니다", () => {
+			const oldDate = new Date("2020-01-01");
+			// 기본 referenceDate (현재 시간) 사용
+			expect(isOlderThan(oldDate, 100)).toBe(true);
+		});
+
+		it("extractDateFromFilename은 잘못된 날짜 형식을 처리합니다", () => {
+			// 패턴은 맞지만 잘못된 날짜
+			const filename = "app-9999-99-99.log";
+			const result = extractDateFromFilename(filename);
+			expect(result).toBeNull();
+		});
 	});
 });
