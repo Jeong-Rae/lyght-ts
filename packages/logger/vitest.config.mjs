@@ -4,7 +4,7 @@ import packageJson from "./package.json";
 export default defineConfig({
 	test: {
 		name: packageJson.name,
-		exclude: ["./benchmarks/**/*", ".yarn/**/*"],
+		exclude: ["./benchmarks/**/*", "**/node_modules/**/*", "**/dist/**/*"],
 		coverage: {
 			provider: "istanbul",
 			include: ["src/**/*"],
