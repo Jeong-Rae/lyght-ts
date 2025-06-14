@@ -26,6 +26,11 @@ describe("Logger", () => {
 	});
 
 	describe("getLevel", () => {
+		it("현재 로그 레벨을 반환합니다", () => {
+			Logger.setLevel("warn");
+			expect(Logger.getLevel()).toBe("warn");
+		});
+
 		it("환경변수에서 로그 레벨을 가져옵니다", () => {
 			process.env.LOG_LEVEL = "warn";
 			Logger.setLevel("warn");
@@ -61,6 +66,31 @@ describe("Logger", () => {
 		});
 	});
 
+	describe("getTransports", () => {
+		it("현재 설정된 Transport 목록을 반환합니다", () => {
+			const transport1 = { log: vi.fn() };
+			const transport2 = { log: vi.fn() };
+			
+			Logger.useTransports(transport1, transport2);
+			const transports = Logger.getTransports();
+			
+			expect(transports).toHaveLength(2);
+			expect(transports[0]).toBe(transport1);
+			expect(transports[1]).toBe(transport2);
+		});
+
+		it("Transport 배열의 복사본을 반환합니다", () => {
+			const transport1 = { log: vi.fn() };
+			Logger.useTransports(transport1);
+			
+			const transports = Logger.getTransports();
+			transports.push({ log: vi.fn() });
+			
+			// 원본 배열은 변경되지 않아야 함
+			expect(Logger.getTransports()).toHaveLength(1);
+		});
+	});
+
 	describe("shouldLog", () => {
 		it("현재 로그 레벨보다 높은 레벨의 로그를 출력합니다", () => {
 			process.env.LOG_LEVEL = "warn";
@@ -93,6 +123,46 @@ describe("Logger", () => {
 				expect.any(Date),
 			);
 			expect(transport2.log).toHaveBeenCalledWith(
+				"info",
+				"test message",
+				{},
+				expect.any(Date),
+			);
+		});
+	});
+
+	describe("transport error handling", () => {
+		it("Transport에서 에러가 발생해도 다른 Transport는 계속 동작합니다", () => {
+			const errorTransport = {
+				log: vi.fn().mockImplementation(() => {
+					throw new Error("Transport error");
+				}),
+			};
+			const workingTransport = { log: vi.fn() };
+
+			Logger.setLevel("info");
+			Logger.useTransports(errorTransport, workingTransport);
+			Logger.info("test message");
+
+			expect(errorTransport.log).toHaveBeenCalled();
+			expect(workingTransport.log).toHaveBeenCalledWith(
+				"info",
+				"test message",
+				{},
+				expect.any(Date),
+			);
+		});
+	});
+
+	describe("log method with default parameters", () => {
+		it("meta 매개변수 없이 로그를 출력합니다", () => {
+			Logger.setLevel("info");
+			Logger.useTransports(mockTransport);
+			
+			// private log 메서드를 간접적으로 테스트
+			Logger.info("test message");
+			
+			expect(mockTransport.log).toHaveBeenCalledWith(
 				"info",
 				"test message",
 				{},

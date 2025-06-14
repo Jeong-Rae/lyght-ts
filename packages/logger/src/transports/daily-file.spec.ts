@@ -143,6 +143,51 @@ describe("DailyFileTransport", () => {
 			expect(writeCall).toContain("10:30:00 warn ");
 			expect(writeCall).toContain("warning message");
 		});
+
+		it("닫힌 transport는 로그를 무시합니다", () => {
+			const transport = new DailyFileTransport({
+				logDirectory: "/tmp/logs",
+			});
+
+			transport.close();
+			transport.log("info", "should be ignored");
+
+			// close 후에는 write가 호출되지 않아야 함
+			expect(mockWriteStream.write).not.toHaveBeenCalled();
+		});
+
+		it("스트림 쓰기 실패 시 에러를 무시합니다", () => {
+			const transport = new DailyFileTransport({
+				logDirectory: "/tmp/logs",
+			});
+
+			// 스트림을 생성하기 위해 로그 작성
+			transport.log("info", "test");
+
+			mockWriteStream.write.mockImplementation(() => {
+				throw new Error("Write failed");
+			});
+
+			// 에러가 발생해도 예외가 던져지지 않아야 함
+			expect(() => transport.log("info", "test")).not.toThrow();
+		});
+
+		it("스트림 생성에 실패했을 때 안전하게 처리합니다", () => {
+			// createWriteStream이 실패하도록 설정
+			vi.mocked(fsUtils.createWriteStream).mockImplementation(() => {
+				throw new Error("Stream creation failed");
+			});
+
+			const transport = new DailyFileTransport({
+				logDirectory: "/tmp/logs",
+			});
+
+			// 스트림 생성이 실패해도 로그 시도 시 에러가 발생하지 않아야 함
+			expect(() => transport.log("info", "test message")).not.toThrow();
+
+			// currentStream이 없으므로 write가 호출되지 않아야 함
+			expect(mockWriteStream.write).not.toHaveBeenCalled();
+		});
 	});
 
 	describe("file cleanup", () => {
@@ -197,6 +242,30 @@ describe("DailyFileTransport", () => {
 				});
 			}).not.toThrow();
 		});
+
+		it("날짜 형식이 맞지 않는 파일은 무시합니다", () => {
+			const mockDate = new Date("2024-01-15T10:00:00.000Z");
+			vi.setSystemTime(mockDate);
+
+			// 날짜 형식이 맞지 않는 파일들
+			vi.mocked(fsUtils.listFilesWithPattern).mockReturnValue([
+				"app-invalid-date.log",
+				"app-2024-13-40.log", // 잘못된 날짜
+				"app-2024-01-10.log", // 5일 전 (삭제되어야 함)
+			]);
+
+			new DailyFileTransport({
+				logDirectory: "/tmp/logs",
+				fileNamePattern: "app",
+				maxDays: 3, // 3일보다 오래된 파일 삭제
+			});
+
+			// 올바른 형식이면서 오래된 파일만 처리되어야 함
+			expect(fsUtils.deleteFile).toHaveBeenCalledWith(
+				"/tmp/logs/app-2024-01-10.log",
+			);
+			expect(fsUtils.deleteFile).toHaveBeenCalledTimes(1);
+		});
 	});
 
 	describe("close", () => {
@@ -220,6 +289,21 @@ describe("DailyFileTransport", () => {
 
 			// 로그를 작성하지 않은 상태에서 close 호출
 			expect(() => transport.close()).not.toThrow();
+		});
+
+		it("이미 닫힌 transport를 다시 닫아도 안전합니다", () => {
+			const transport = new DailyFileTransport({
+				logDirectory: "/tmp/logs",
+			});
+
+			// 스트림을 생성하기 위해 로그 작성
+			transport.log("info", "test");
+
+			transport.close();
+			transport.close(); // 두 번째 호출
+
+			// end가 한 번만 호출되어야 함
+			expect(mockWriteStream.end).toHaveBeenCalledTimes(1);
 		});
 	});
 

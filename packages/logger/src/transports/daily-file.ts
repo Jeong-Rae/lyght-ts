@@ -80,9 +80,14 @@ export class DailyFileTransport implements Transport {
 
 			this.currentDate = formattedDate;
 			const filePath = this.getCurrentFilePath(date);
-			this.currentStream = createWriteStream(filePath, {
-				flags: FILE_APPEND_FLAG,
-			});
+			try {
+				this.currentStream = createWriteStream(filePath, {
+					flags: FILE_APPEND_FLAG,
+				});
+			} catch (error) {
+				// 스트림 생성 실패 시 무시
+				this.currentStream = undefined;
+			}
 		}
 	}
 

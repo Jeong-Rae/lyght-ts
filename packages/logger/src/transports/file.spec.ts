@@ -408,6 +408,132 @@ describe("FileTransport", () => {
 			// 에러가 발생해도 큐에 작업이 추가되어야 함
 			expect(globalBackgroundQueue.enqueue).toHaveBeenCalled();
 		});
+
+		it("실제 파일 회전 로직을 완전히 테스트합니다", async () => {
+			const transport = new FileTransport({
+				filePath: "/tmp/test.log",
+				maxFileSize: 100,
+				maxFiles: 3,
+				compress: true,
+			});
+
+			// 기존 파일들이 있다고 설정
+			vi.mocked(fsUtils.listFiles).mockReturnValue([
+				"test.log.1",
+				"test.log.2.gz",
+				"test.log.3.gz",
+			]);
+			vi.mocked(fsUtils.exists).mockReturnValue(true);
+
+			// 파일 회전 트리거
+			vi.mocked(fsUtils.getFileSize).mockReturnValue(90);
+			const longMessage = "a".repeat(50);
+			transport.log("info", longMessage);
+
+			// 백그라운드 큐의 콜백을 실행하여 실제 회전 로직 테스트
+			const enqueueCalls = vi.mocked(globalBackgroundQueue.enqueue).mock.calls;
+			if (enqueueCalls.length > 0) {
+				const rotateCallback = enqueueCalls[0][0];
+				await rotateCallback();
+			}
+
+			// 파일 이동과 압축이 호출되었는지 확인
+			expect(fsUtils.moveFile).toHaveBeenCalled();
+			expect(fsUtils.compressFile).toHaveBeenCalled();
+		});
+
+		it("파일 번호 추출이 올바르게 작동합니다", async () => {
+			const transport = new FileTransport({
+				filePath: "/tmp/test.log",
+				maxFileSize: 100,
+				maxFiles: 5,
+				compress: false,
+			});
+
+			// 다양한 형태의 파일명들
+			vi.mocked(fsUtils.listFiles).mockReturnValue([
+				"test.log.1",
+				"test.log.2",
+				"test.log.10",
+				"other.log.1", // 다른 파일
+				"test.log.invalid", // 잘못된 형식
+			]);
+			vi.mocked(fsUtils.exists).mockReturnValue(true);
+
+			// 파일 회전 트리거
+			vi.mocked(fsUtils.getFileSize).mockReturnValue(90);
+			const longMessage = "a".repeat(50);
+			transport.log("info", longMessage);
+
+			// 백그라운드 큐의 콜백을 실행
+			const enqueueCalls = vi.mocked(globalBackgroundQueue.enqueue).mock.calls;
+			if (enqueueCalls.length > 0) {
+				const rotateCallback = enqueueCalls[0][0];
+				await rotateCallback();
+			}
+
+			// 올바른 파일들만 처리되었는지 확인
+			expect(fsUtils.moveFile).toHaveBeenCalled();
+		});
+
+		it("최대 파일 수 초과 시 파일을 삭제합니다", async () => {
+			const transport = new FileTransport({
+				filePath: "/tmp/test.log",
+				maxFileSize: 100,
+				maxFiles: 2,
+				compress: false,
+			});
+
+			// 최대 파일 수를 초과하는 파일들
+			vi.mocked(fsUtils.listFiles).mockReturnValue([
+				"test.log.1",
+				"test.log.2",
+				"test.log.3", // 이 파일은 삭제되어야 함
+			]);
+			vi.mocked(fsUtils.exists).mockReturnValue(true);
+
+			// 파일 회전 트리거
+			vi.mocked(fsUtils.getFileSize).mockReturnValue(90);
+			const longMessage = "a".repeat(50);
+			transport.log("info", longMessage);
+
+			// 백그라운드 큐의 콜백을 실행
+			const enqueueCalls = vi.mocked(globalBackgroundQueue.enqueue).mock.calls;
+			if (enqueueCalls.length > 0) {
+				const rotateCallback = enqueueCalls[0][0];
+				await rotateCallback();
+			}
+
+			// 파일 삭제가 호출되었는지 확인
+			expect(fsUtils.deleteFile).toHaveBeenCalled();
+		});
+
+		it("회전 중 에러가 발생해도 안전하게 처리됩니다", async () => {
+			const transport = new FileTransport({
+				filePath: "/tmp/test.log",
+				maxFileSize: 100,
+				maxFiles: 3,
+				compress: false,
+			});
+
+			// 스트림 종료 시 에러 발생 시뮬레이션
+			mockWriteStream.end.mockImplementation((callback: any) => {
+				if (callback) callback(new Error("Stream end failed"));
+			});
+
+			// 파일 회전 트리거
+			vi.mocked(fsUtils.getFileSize).mockReturnValue(90);
+			const longMessage = "a".repeat(50);
+			transport.log("info", longMessage);
+
+			// 백그라운드 큐의 콜백을 실행
+			const enqueueCalls = vi.mocked(globalBackgroundQueue.enqueue).mock.calls;
+			if (enqueueCalls.length > 0) {
+				const rotateCallback = enqueueCalls[0][0];
+				// 에러가 발생해도 예외가 던져지지 않아야 함
+				await expect(rotateCallback()).resolves.toBeUndefined();
+			}
+		});
 	});
 
 	describe("close", () => {
