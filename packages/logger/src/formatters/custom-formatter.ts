@@ -3,7 +3,7 @@ import { LogFormatter } from "./log-formatter";
 
 /**
  * 커스텀 포맷터 - 사용자 정의 포맷 함수 사용
- * 
+ *
  * 사용자가 정의한 포맷 함수를 사용하여 로그를 포맷팅합니다.
  * 특별한 요구사항이나 기존 포맷터로는 충족할 수 없는 형식이 필요할 때 사용합니다.
  * 완전한 커스터마이징이 가능하며, 복잡한 로그 형식도 구현할 수 있습니다.
@@ -60,4 +60,4 @@ export class CustomFormatter implements LogFormatter {
 	): string {
 		return this.formatFn(level, message, meta, timestamp);
 	}
-} 
+}

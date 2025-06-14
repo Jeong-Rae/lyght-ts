@@ -7,12 +7,7 @@ describe("DefaultFormatter", () => {
 	const testMeta = { userId: "123", action: "login" };
 
 	it("기본 포맷으로 로그를 포맷팅합니다", () => {
-		const result = formatter.format(
-			"info",
-			"test message",
-			testMeta,
-			testDate,
-		);
+		const result = formatter.format("info", "test message", testMeta, testDate);
 
 		expect(result).toBe(
 			'2024-01-01T12:30:45.123Z [INFO] test message {"userId":"123","action":"login"}\n',
@@ -33,4 +28,4 @@ describe("DefaultFormatter", () => {
 			expect(result).toContain(`[${level.toUpperCase()}]`);
 		});
 	});
-}); 
+});

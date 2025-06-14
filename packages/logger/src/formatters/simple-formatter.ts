@@ -5,7 +5,7 @@ import { LogFormatter } from "./log-formatter";
 
 /**
  * 심플 포맷터 - HH:MM:SS + 레벨 + 메시지
- * 
+ *
  * 간단하고 읽기 쉬운 형식의 로그를 제공합니다.
  * 개발 환경이나 콘솔 출력에 적합하며, 시간은 HH:MM:SS 형식으로 표시됩니다.
  * 로그 레벨은 일정한 길이로 패딩되어 정렬된 출력을 제공합니다.
@@ -37,4 +37,4 @@ export class SimpleFormatter implements LogFormatter {
 			Object.keys(meta).length > 0 ? ` | ${JSON.stringify(meta)}` : "";
 		return `${formattedTime} ${formattedLevel} ${message}${formattedMeta}\n`;
 	}
-} 
+}

@@ -4,7 +4,7 @@ import { LogFormatter } from "./log-formatter";
 
 /**
  * 기본 포맷터 - ISO 타임스탬프 + [LEVEL] + 메시지 + JSON 메타
- * 
+ *
  * 가장 표준적인 로그 형식을 제공하며, 대부분의 로깅 시나리오에 적합합니다.
  * 타임스탬프는 ISO 8601 형식을 사용하고, 로그 레벨은 대괄호로 감싸서 표시합니다.
  */
@@ -35,4 +35,4 @@ export class DefaultFormatter implements LogFormatter {
 			Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : "";
 		return `${formattedTimestamp} ${formattedLevel} ${message}${formattedMeta}\n`;
 	}
-} 
+}

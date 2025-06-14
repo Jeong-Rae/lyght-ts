@@ -80,7 +80,7 @@ export function exists(filePath: string): boolean {
  */
 export function getFileInfo(filePath: string): FileInfo {
 	const fileExists = exists(filePath);
-	
+
 	if (!fileExists) {
 		return {
 			path: filePath,
@@ -134,14 +134,14 @@ export function getFileSize(filePath: string): number {
  * @example
  * ```typescript
  * createDirectory('/path/to/new/directory'); // true
- * 
+ *
  * // 재귀적으로 생성하지 않기
  * createDirectory('/path/to/dir', { recursive: false });
  * ```
  */
 export function createDirectory(
-	dirPath: string, 
-	options: CreateDirectoryOptions = { recursive: true }
+	dirPath: string,
+	options: CreateDirectoryOptions = { recursive: true },
 ): boolean {
 	try {
 		if (exists(dirPath)) {
@@ -192,13 +192,13 @@ export function ensureFileDirectory(filePath: string): boolean {
  * @example
  * ```typescript
  * createWriteStream('/logs/app.log');
- * 
+ *
  * createWriteStream('/logs/app.log', { flags: 'w' });
  * ```
  */
 export function createWriteStream(
-	filePath: string, 
-	options: CreateStreamOptions = { flags: "a" }
+	filePath: string,
+	options: CreateStreamOptions = { flags: "a" },
 ): fs.WriteStream {
 	ensureFileDirectory(filePath);
 	return fs.createWriteStream(filePath, options);
@@ -212,13 +212,13 @@ export function createWriteStream(
  * @example
  * ```typescript
  * createReadStream('/logs/app.log');
- * 
+ *
  * createReadStream('/logs/app.log', { start: 0, end: 100 });
  * ```
  */
 export function createReadStream(
-	filePath: string, 
-	options: CreateStreamOptions = {}
+	filePath: string,
+	options: CreateStreamOptions = {},
 ): fs.ReadStream {
 	return fs.createReadStream(filePath, options);
 }
@@ -251,12 +251,15 @@ export function listFiles(dirPath: string): string[] {
  * @example
  * ```typescript
  * listFilesWithPattern('/logs', /\.log$/); // ['app.log', 'error.log']
- * 
+ *
  * listFilesWithPattern('/logs', /app-\d{4}-\d{2}-\d{2}\.log/); // ['app-2024-01-01.log', 'app-2024-01-02.log']
  * ```
  */
-export function listFilesWithPattern(dirPath: string, pattern: RegExp): string[] {
-	return listFiles(dirPath).filter(file => pattern.test(file));
+export function listFilesWithPattern(
+	dirPath: string,
+	pattern: RegExp,
+): string[] {
+	return listFiles(dirPath).filter((file) => pattern.test(file));
 }
 
 /**
@@ -288,7 +291,7 @@ export function deleteFile(filePath: string): boolean {
  * @example
  * ```typescript
  * moveFile('/temp/old.txt', '/archive/new.txt'); // true (이동 성공)
- * 
+ *
  * // 파일명만 변경
  * moveFile('/logs/app.log', '/logs/app-backup.log'); // true
  * ```
@@ -337,14 +340,14 @@ export function copyFile(sourcePath: string, destPath: string): boolean {
  * @example
  * ```typescript
  * await compressFile('/logs/app.log'); // true (app.log.gz 파일 생성됨)
- * 
+ *
  * // 원본 파일 삭제하면서 압축
  * await compressFile('/logs/old.log', { deleteOriginal: true });
  * ```
  */
 export async function compressFile(
-	filePath: string, 
-	options: CompressFileOptions = {}
+	filePath: string,
+	options: CompressFileOptions = {},
 ): Promise<boolean> {
 	return new Promise((resolve) => {
 		try {
@@ -389,7 +392,10 @@ export async function compressFile(
  * // }
  * ```
  */
-export function deleteFiles(filePaths: string[]): { success: string[]; failed: string[] } {
+export function deleteFiles(filePaths: string[]): {
+	success: string[];
+	failed: string[];
+} {
 	const success: string[] = [];
 	const failed: string[] = [];
 
@@ -424,7 +430,7 @@ export function normalizePath(filePath: string): string {
  * @example
  * ```typescript
  * joinPath('/logs', 'app', 'debug.log'); // '/logs/app/debug.log'
- * 
+ *
  * joinPath('..', 'config', 'settings.json'); // '../config/settings.json'
  * ```
  */
@@ -439,7 +445,7 @@ export function joinPath(...paths: string[]): string {
  * @example
  * ```typescript
  * getExtension('/logs/app.log'); // '.log'
- * 
+ *
  * getExtension('/config/settings'); // ''
  * ```
  */
@@ -454,7 +460,7 @@ export function getExtension(filePath: string): string {
  * @example
  * ```typescript
  * getBaseName('/logs/app.log'); // 'app'
- * 
+ *
  * getBaseName('/config/settings.json'); // 'settings'
  * ```
  */
@@ -469,7 +475,7 @@ export function getBaseName(filePath: string): string {
  * @example
  * ```typescript
  * getDirectory('/logs/app/debug.log'); // '/logs/app'
- * 
+ *
  * getDirectory('config.json'); // '.'
  * ```
  */

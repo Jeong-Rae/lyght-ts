@@ -50,4 +50,4 @@ describe("CustomFormatter", () => {
 
 		expect(result).toBe("warn: warning [{}]\n");
 	});
-}); 
+});

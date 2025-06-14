@@ -9,7 +9,7 @@ export class BackgroundQueue {
 	/**
 	 * 백그라운드 작업을 큐에 추가합니다.
 	 * @param {BackgroundTask} task - 백그라운드 작업 함수
-	 * 
+	 *
 	 * @example
 	 * ```typescript
 	 * const queue = new BackgroundQueue();

@@ -6,7 +6,7 @@ import { LOG_LEVEL_PRIORITY } from "../constants";
  * @param {LogLevel} level - 확인할 로그 레벨
  * @param {LogLevel} threshold - 기준 로그 레벨
  * @returns {boolean} level이 threshold보다 높거나 같으면 true
- * 
+ *
  * @example
  * ```typescript
  * isLogLevelEnabled('info', 'debug'); // true
@@ -24,7 +24,7 @@ export function isLogLevelEnabled(
  * 로그 레벨의 우선순위 값을 반환합니다.
  * @param {LogLevel} level - 로그 레벨
  * @returns {number} 우선순위 값
- * 
+ *
  * @example
  * ```typescript
  * getLogLevelPriority('info'); // 2
@@ -39,7 +39,7 @@ export function getLogLevelPriority(level: LogLevel): number {
  * 로그 레벨이 유효한지 확인합니다.
  * @param {string} level - 확인할 로그 레벨
  * @returns {boolean} 유효한 로그 레벨이면 true
- * 
+ *
  * @example
  * ```typescript
  * isValidLogLevel('info'); // true

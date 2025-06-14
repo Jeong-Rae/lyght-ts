@@ -4,7 +4,7 @@ import { LogFormatter } from "./log-formatter";
 
 /**
  * JSON 포맷터 - 완전한 JSON 객체 형태
- * 
+ *
  * 로그를 구조화된 JSON 형식으로 출력합니다.
  * 로그 분석 도구나 구조화된 로깅이 필요한 환경에서 유용합니다.
  * 메타데이터는 JSON 객체의 최상위 레벨에 병합됩니다.
@@ -38,4 +38,4 @@ export class JsonFormatter implements LogFormatter {
 		};
 		return JSON.stringify(logEntry) + "\n";
 	}
-} 
+}

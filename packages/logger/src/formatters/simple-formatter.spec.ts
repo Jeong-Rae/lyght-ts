@@ -32,4 +32,4 @@ describe("SimpleFormatter", () => {
 		expect(result).toContain("warn ");
 		expect(result.indexOf("warn ")).toBe(9); // 시간 이후 위치
 	});
-}); 
+});

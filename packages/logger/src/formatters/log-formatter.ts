@@ -14,4 +14,4 @@ export interface LogFormatter {
 	 * @returns {string} 포맷팅된 로그 문자열 (개행 문자 포함)
 	 */
 	format(level: LogLevel, message: string, meta: Meta, timestamp: Date): string;
-} 
+}

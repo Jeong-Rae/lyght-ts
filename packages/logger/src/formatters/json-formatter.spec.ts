@@ -54,4 +54,4 @@ describe("JsonFormatter", () => {
 		expect(parsed.tags).toEqual(["auth", "login"]);
 		expect(parsed.nested.deep.value).toBe(true);
 	});
-}); 
+});
