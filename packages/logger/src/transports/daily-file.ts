@@ -21,6 +21,22 @@ import {
 	joinPath,
 } from "../utils/fs";
 
+/**
+ * @deprecated DailyFileTransport는 더 이상 사용되지 않습니다.
+ * 대신 FileTransport의 rotation: 'date' 옵션을 사용하세요.
+ *
+ * @example
+ * ```typescript
+ * // 기존 방식 (deprecated)
+ * new DailyFileTransport({ logDirectory: './logs' })
+ *
+ * // 새로운 방식 (권장)
+ * new FileTransport({
+ *   filePath: './logs',
+ *   rotation: 'date'
+ * })
+ * ```
+ */
 export interface DailyFileTransportOptions {
 	/** 로그 파일 디렉토리 */
 	logDirectory: string;
@@ -33,7 +49,28 @@ export interface DailyFileTransportOptions {
 }
 
 /**
+ * @deprecated DailyFileTransport는 더 이상 사용되지 않습니다.
+ * 대신 FileTransport의 rotation: 'date' 옵션을 사용하세요.
+ *
  * 날짜별로 로그 파일을 생성하는 Transport
+ *
+ * @example
+ * ```typescript
+ * // 기존 방식 (deprecated)
+ * new DailyFileTransport({
+ *   logDirectory: './logs',
+ *   fileNamePattern: 'app',
+ *   maxDays: 30
+ * })
+ *
+ * // 새로운 방식 (권장)
+ * new FileTransport({
+ *   filePath: './logs',
+ *   fileNamePattern: 'app',
+ *   rotation: 'date',
+ *   cleanup: { maxDays: 30 }
+ * })
+ * ```
  */
 export class DailyFileTransport implements Transport {
 	private readonly logDirectory: string;
@@ -45,6 +82,12 @@ export class DailyFileTransport implements Transport {
 	private isClosed: boolean = false;
 
 	constructor(options: DailyFileTransportOptions) {
+		// Deprecation warning
+		console.warn(
+			'⚠️  DailyFileTransport is deprecated. Use FileTransport with rotation: "date" instead.\n' +
+				'   Example: new FileTransport({ filePath: "./logs", rotation: "date" })',
+		);
+
 		this.logDirectory = options.logDirectory;
 		this.fileNamePattern = options.fileNamePattern ?? "app";
 		this.maxDays = options.maxDays ?? DEFAULT_MAX_DAYS;

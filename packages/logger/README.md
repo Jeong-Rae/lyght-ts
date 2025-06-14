@@ -17,7 +17,7 @@ yarn add @lyght/logger
 ### 단순한 콘솔 로깅
 
 ```typescript
-import { Logger, ConsoleTransport } from 'logger';
+import { Logger, ConsoleTransport } from '@lyght/logger';
 
 // Transport 설정
 Logger.useTransports(new ConsoleTransport());
@@ -56,192 +56,318 @@ try {
 }
 ```
 
-## 🎯 Transport 시스템
+## 🔧 Transport 설정
 
 ### Console Transport
 
 콘솔에 로그를 출력합니다.
 
 ```typescript
-import { Logger, ConsoleTransport } from 'logger';
+import { Logger, ConsoleTransport } from '@lyght/logger';
 
-Logger.useTransports(new ConsoleTransport());
+Logger.useTransports(new ConsoleTransport({
+  colors: true // 컬러 출력 활성화 (기본값: true)
+}));
 ```
 
-### File Transport
+### 통합 File Transport
 
-파일에 로그를 저장합니다. 파일 롤링, 압축, 자동 디렉토리 생성을 지원합니다.
+파일에 로그를 저장하는 통합 Transport입니다. 크기 기반, 날짜 기반, 또는 복합 롤링을 지원합니다.
 
-#### 기본 사용법
+#### 🔄 크기 기반 롤링 (기본)
 
-```typescript
-import { Logger, FileTransport } from '@lyght/logger';
-
-// 간단한 파일 로깅
-Logger.useTransports(new FileTransport('./logs/app.log'));
-```
-
-#### 고급 옵션
+파일 크기가 지정된 크기를 초과하면 새로운 파일로 회전합니다.
 
 ```typescript
 import { Logger, FileTransport } from '@lyght/logger';
 
 Logger.useTransports(new FileTransport({
   filePath: './logs/app.log',
-  maxFileSize: 10 * 1024 * 1024,  // 10MB (기본값)
-  maxFiles: 5,                     // 최대 5개 파일 보관 (기본값)
-  compress: true                   // 회전된 파일 압축 (기본값: true)
+  rotation: 'size', // 기본값
+  maxFileSize: 10 * 1024 * 1024, // 10MB
+  compress: true, // gzip 압축 (기본값: true)
+  cleanup: {
+    maxFiles: 5 // 최대 5개 파일 보관
+  }
 }));
+
+// 생성되는 파일들:
+// app.log (현재)
+// app.log.1.gz (이전)
+// app.log.2.gz (더 이전)
+// ...
 ```
 
-#### 주요 기능
+#### 📅 날짜 기반 롤링
 
-- **자동 롤링**: 파일 크기가 `maxFileSize`를 초과하면 자동으로 새 파일로 회전
-- **파일 압축**: 회전된 파일을 gzip으로 압축하여 디스크 공간 절약
-- **자동 정리**: `maxFiles` 수를 초과하는 오래된 파일 자동 삭제
-- **디렉토리 생성**: 로그 파일 경로의 디렉토리가 없으면 자동 생성
+날짜가 바뀔 때마다 새로운 파일을 생성합니다.
+
+```typescript
+Logger.useTransports(new FileTransport({
+  filePath: './logs', // 디렉토리 경로
+  rotation: 'date',
+  fileNamePattern: 'app', // 파일명 패턴
+  cleanup: {
+    maxDays: 30 // 30일 이상 된 파일 삭제
+  }
+}));
+
+// 생성되는 파일들:
+// logs/app-2024-01-15.log
+// logs/app-2024-01-16.log
+// logs/app-2024-01-17.log
+// ...
+```
+
+#### 🔄📅 하이브리드 롤링
+
+날짜별로 파일을 생성하되, 파일 크기가 초과하면 해당 날짜 내에서도 회전합니다.
+
+```typescript
+Logger.useTransports(new FileTransport({
+  filePath: './logs',
+  rotation: 'hybrid',
+  fileNamePattern: 'service',
+  maxFileSize: 50 * 1024 * 1024, // 50MB
+  compress: true,
+  cleanup: {
+    maxFiles: 10, // 각 날짜별 최대 10개 파일
+    maxDays: 90   // 90일 이상 된 파일 삭제
+  }
+}));
+
+// 생성되는 파일들:
+// logs/service-2024-01-15.log (현재)
+// logs/service-2024-01-15.1.gz (크기 초과로 회전)
+// logs/service-2024-01-15.2.gz
+// logs/service-2024-01-16.log (날짜 변경)
+// ...
+```
+
+#### 📋 롤링 모드 비교
+
+| 특징 | `rotation: 'size'` | `rotation: 'date'` | `rotation: 'hybrid'` |
+|------|-------------------|-------------------|-------------------|
+| **회전 기준** | 파일 크기 | 날짜 변경 (자정) | 크기 + 날짜 |
+| **파일명** | `app.log.1` | `app-2024-01-15.log` | `app-2024-01-15.1.log` |
+| **압축 지원** | ✅ | ❌ | ✅ |
+| **정리 기준** | 파일 개수 | 보관 일수 | 파일 개수 + 보관 일수 |
+| **적합한 용도** | 고성능, 디스크 절약 | 일별 분석, 모니터링 | 대용량 + 일별 관리 |
 
 ### APM Transport
 
-APM 서비스(예: Elastic APM, Sentry)에 로그를 전송합니다.
+APM 서비스로 로그를 전송합니다.
 
 ```typescript
-import { Logger, ApmTransport } from 'logger';
-import apm from 'elastic-apm-node';
+import { Logger, ApmTransport } from '@lyght/logger';
 
-Logger.useTransports(new ApmTransport(apm));
+Logger.useTransports(new ApmTransport({
+  endpoint: 'https://apm.example.com/logs',
+  apiKey: 'your-api-key',
+  serviceName: 'my-service',
+  environment: 'production'
+}));
 ```
 
-### 여러 Transport 조합 사용
+## 🎨 포맷터 시스템
+
+로그 출력 형식을 커스터마이징할 수 있습니다.
+
+### DefaultFormatter (기본)
 
 ```typescript
-import { Logger, ConsoleTransport, FileTransport, ApmTransport } from 'logger';
+// 출력: 2024-01-15T10:30:00.000Z [INFO] 사용자 로그인 {"userId":"123"}
+Logger.useTransports(new FileTransport({
+  filePath: './logs/app.log',
+  formatter: new DefaultFormatter()
+}));
+```
+
+### JsonFormatter
+
+```typescript
+import { JsonFormatter } from '@lyght/logger';
+
+// 출력: {"timestamp":"2024-01-15T10:30:00.000Z","level":"info","message":"사용자 로그인","userId":"123"}
+Logger.useTransports(new FileTransport({
+  filePath: './logs/app.log',
+  formatter: new JsonFormatter()
+}));
+```
+
+### SimpleFormatter
+
+```typescript
+import { SimpleFormatter } from '@lyght/logger';
+
+// 출력: 10:30:00 info 사용자 로그인
+Logger.useTransports(new FileTransport({
+  filePath: './logs/app.log',
+  formatter: new SimpleFormatter()
+}));
+```
+
+### CustomFormatter
+
+```typescript
+import { CustomFormatter } from '@lyght/logger';
+
+Logger.useTransports(new FileTransport({
+  filePath: './logs/app.log',
+  formatter: new CustomFormatter((level, message, meta, timestamp) => {
+    return `[${level.toUpperCase()}] ${message} | ${JSON.stringify(meta)}\n`;
+  })
+}));
+```
+
+## 🔧 고급 설정
+
+### 여러 Transport 사용
+
+```typescript
+import { Logger, ConsoleTransport, FileTransport, ApmTransport } from '@lyght/logger';
 
 Logger.useTransports(
-  new ConsoleTransport(),
-  new FileTransport('./logs/app.log'),
-  new ApmTransport(apmClient)
+  // 개발 환경: 콘솔 출력
+  new ConsoleTransport({ colors: true }),
+  
+  // 에러 로그: 크기 기반 파일 저장
+  new FileTransport({
+    filePath: './logs/error.log',
+    rotation: 'size',
+    maxFileSize: 5 * 1024 * 1024,
+    compress: true,
+    cleanup: { maxFiles: 10 }
+  }),
+  
+  // 일반 로그: 날짜 기반 파일 저장
+  new FileTransport({
+    filePath: './logs',
+    rotation: 'date',
+    fileNamePattern: 'access',
+    cleanup: { maxDays: 30 }
+  }),
+  
+  // 프로덕션: APM 서비스
+  new ApmTransport({
+    endpoint: 'https://apm.example.com/logs',
+    apiKey: process.env.APM_API_KEY!,
+    serviceName: 'my-service'
+  })
 );
-
-// 모든 transport에 동시에 로그가 출력됩니다
-Logger.info('애플리케이션 시작됨');
 ```
 
-## 📊 로그 레벨
-
-로그 레벨은 환경변수 `LOG_LEVEL`로 설정할 수 있습니다.
-
-```bash
-export LOG_LEVEL=warn
-```
-
-### 지원하는 로그 레벨
-
-1. **debug** - 디버깅 정보 (기본값)
-2. **info** - 일반 정보
-3. **warn** - 경고
-4. **error** - 에러
-
-설정된 레벨보다 높은 우선순위의 로그만 출력됩니다.
+### 로그 레벨 설정
 
 ```typescript
-// LOG_LEVEL=warn인 경우
-Logger.debug('출력되지 않음'); 
-Logger.info('출력되지 않음');  
-Logger.warn('출력됨');         
-Logger.error('출력됨');        
+import { Logger, LogLevel } from '@lyght/logger';
+
+// 환경변수로 설정 (LOG_LEVEL=warn)
+// 또는 코드로 설정
+Logger.setLevel(LogLevel.WARN);
+
+// warn, error만 출력됨
+Logger.debug('디버그'); // 출력 안됨
+Logger.info('정보');   // 출력 안됨  
+Logger.warn('경고');   // 출력됨
+Logger.error('에러');  // 출력됨
 ```
 
-## 🛠️ 고급 사용법
+### 실시간 사용 예제
 
-### 커스텀 Transport 만들기
-
-```typescript
-import { Transport, LogLevel, Meta } from 'logger';
-
-class DatabaseTransport implements Transport {
-  log(level: LogLevel, message: string, meta: Meta = {}): void {
-    // 데이터베이스에 로그 저장 로직
-    db.table.save(message);
-  }
-}
-
-Logger.useTransports(new DatabaseTransport());
-```
-
-### 조건부 로깅
+#### 웹 애플리케이션 서버
 
 ```typescript
-import { Logger } from 'logger';
+import { Logger, ConsoleTransport, FileTransport } from '@lyght/logger';
 
-// 개발 환경에서만 디버그 로그 출력
+// 개발 환경
 if (process.env.NODE_ENV === 'development') {
-  Logger.debug('개발 환경 디버그 정보');
+  Logger.useTransports(new ConsoleTransport({ colors: true }));
 }
 
-// 에러 레벨에서만 슬랙 알림
-Logger.error('심각한 에러 발생', { 
-  notify: 'slack',
-  channel: '#alerts' 
-});
+// 프로덕션 환경
+if (process.env.NODE_ENV === 'production') {
+  Logger.useTransports(
+    // 에러 로그: 크기 기반, 압축
+    new FileTransport({
+      filePath: './logs/error.log',
+      rotation: 'size',
+      maxFileSize: 10 * 1024 * 1024,
+      compress: true,
+      cleanup: { maxFiles: 5 }
+    }),
+    
+    // 액세스 로그: 날짜 기반
+    new FileTransport({
+      filePath: './logs',
+      rotation: 'date',
+      fileNamePattern: 'access',
+      cleanup: { maxDays: 30 }
+    })
+  );
+}
+
+// 사용
+Logger.info('서버 시작', { port: 3000 });
+Logger.error('데이터베이스 연결 실패', { error: dbError });
 ```
 
-## 📝 API 레퍼런스
-
-### Logger 클래스
-
-#### 정적 메서드
-
-- `Logger.useTransports(...transports: Transport[])` - Transport 설정
-- `await Logger.debug(message: string, meta?: Meta)` - 디버그 로그
-- `await Logger.info(message: string, meta?: Meta)` - 정보 로그  
-- `await Logger.warn(message: string, meta?: Meta)` - 경고 로그
-- `await Logger.error(errOrMsg: string | Error, meta?: Meta)` - 에러 로그
-
-### Transport 인터페이스
+#### 마이크로서비스 환경
 
 ```typescript
-interface Transport {
-  log(level: LogLevel, message: string, meta?: Meta): void | Promise<void>;
-}
+// 서비스별 로그 분리
+Logger.useTransports(new FileTransport({
+  filePath: './logs',
+  rotation: 'hybrid',
+  fileNamePattern: `${process.env.SERVICE_NAME || 'service'}`,
+  maxFileSize: 100 * 1024 * 1024, // 100MB
+  compress: true,
+  cleanup: {
+    maxFiles: 20,
+    maxDays: 60
+  }
+}));
 ```
 
-### 타입 정의
+## 📊 성능 최적화
+
+- **백그라운드 처리**: 파일 회전과 압축은 백그라운드에서 처리되어 로깅 성능에 영향을 주지 않습니다.
+- **스트림 재사용**: 동일한 파일에 대해 스트림을 재사용하여 I/O 오버헤드를 최소화합니다.
+- **압축**: gzip 압축으로 디스크 사용량을 크게 줄일 수 있습니다.
+- **자동 정리**: 오래된 파일을 자동으로 삭제하여 디스크 공간을 관리합니다.
+
+## 🔒 에러 처리
+
+모든 Transport는 안전한 에러 처리를 제공합니다:
+
+- 파일 쓰기 실패 시 로그 손실 없이 계속 동작
+- 네트워크 오류 시 APM 전송 실패를 무시
+- 파일 회전 실패 시에도 로깅 계속 진행
+
+## 📝 마이그레이션 가이드
+
+### DailyFileTransport에서 FileTransport로
 
 ```typescript
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-type Meta = Record<string, unknown>;
+// 기존 (deprecated)
+new DailyFileTransport({
+  logDirectory: './logs',
+  fileNamePattern: 'app',
+  maxDays: 30
+})
 
-interface FileTransportOptions {
-  filePath: string;
-  maxFileSize?: number;  // bytes, 기본값: 10MB
-  maxFiles?: number;     // 기본값: 5
-  compress?: boolean;    // 기본값: true
-}
+// 새로운 방식 (권장)
+new FileTransport({
+  filePath: './logs',
+  rotation: 'date',
+  fileNamePattern: 'app',
+  cleanup: { maxDays: 30 }
+})
 ```
 
-## 🌍 환경변수
+## �� 라이선스
 
-| 변수명 | 설명 | 기본값 | 예시 |
-|--------|------|--------|------|
-| `LOG_LEVEL` | 최소 로그 레벨 | `debug` | `warn`, `error` |
-
-## 🧪 테스트
-
-```bash
-# 테스트 실행
-pnpm test
-
-# 커버리지 포함 테스트
-pnpm test --coverage
-
-# 타입 체크
-pnpm typecheck
-```
-
-## 📄 라이선스
-
-ISC
+MIT License
 
 ## 🤝 기여
 
@@ -257,11 +383,12 @@ ISC
 
 ### 파일 로깅 시 디렉토리 자동 생성
 
-FileTransport는 로그 파일 경로의 디렉토리가 없으면 자동으로 생성합니다. 별도의 디렉토리 생성이 불필요합니다.
+FileTransport와 DailyFileTransport는 로그 파일 경로의 디렉토리가 없으면 자동으로 생성합니다. 별도의 디렉토리 생성이 불필요합니다.
 
 ```typescript
 // 디렉토리가 없어도 자동 생성됨
 Logger.useTransports(new FileTransport('./logs/nested/deep/app.log'));
+Logger.useTransports(new DailyFileTransport({ logDirectory: './logs/daily' }));
 ```
 
 ### 환경변수 설정
@@ -274,6 +401,19 @@ export LOG_LEVEL=warn
 
 # Windows (PowerShell)
 $env:LOG_LEVEL = "warn"
+```
+
+### Transport 에러 처리
+
+Transport에서 에러가 발생해도 다른 Transport는 계속 동작합니다. 이는 로깅 시스템의 안정성을 보장합니다.
+
+```typescript
+// 하나의 Transport가 실패해도 다른 Transport는 계속 동작
+Logger.useTransports(
+  new ConsoleTransport(),
+  new FileTransport('./logs/app.log'),  // 파일 쓰기 실패 가능
+  new ApmTransport({ apmClient })       // 네트워크 오류 가능
+);
 ```
 
 ## 📞 지원

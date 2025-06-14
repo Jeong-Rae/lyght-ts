@@ -70,10 +70,10 @@ describe("Logger", () => {
 		it("현재 설정된 Transport 목록을 반환합니다", () => {
 			const transport1 = { log: vi.fn() };
 			const transport2 = { log: vi.fn() };
-			
+
 			Logger.useTransports(transport1, transport2);
 			const transports = Logger.getTransports();
-			
+
 			expect(transports).toHaveLength(2);
 			expect(transports[0]).toBe(transport1);
 			expect(transports[1]).toBe(transport2);
@@ -82,10 +82,10 @@ describe("Logger", () => {
 		it("Transport 배열의 복사본을 반환합니다", () => {
 			const transport1 = { log: vi.fn() };
 			Logger.useTransports(transport1);
-			
+
 			const transports = Logger.getTransports();
 			transports.push({ log: vi.fn() });
-			
+
 			// 원본 배열은 변경되지 않아야 함
 			expect(Logger.getTransports()).toHaveLength(1);
 		});
@@ -158,10 +158,10 @@ describe("Logger", () => {
 		it("meta 매개변수 없이 로그를 출력합니다", () => {
 			Logger.setLevel("info");
 			Logger.useTransports(mockTransport);
-			
+
 			// private log 메서드를 간접적으로 테스트
 			Logger.info("test message");
-			
+
 			expect(mockTransport.log).toHaveBeenCalledWith(
 				"info",
 				"test message",
