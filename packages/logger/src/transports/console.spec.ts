@@ -126,5 +126,16 @@ describe("ConsoleTransport", () => {
 				'2024-01-01T00:00:00.000Z [INFO] user action {"user":{"id":123,"name":"John Doe"},"context":{"action":"login","timestamp":"2024-01-01T00:00:00.000Z","metadata":{"source":"web","device":"desktop"}},"tags":["auth","security"]}',
 			);
 		});
+
+		it("타입스탬프를 인자로 받지 않으면 현재 시간을 사용합니다", () => {
+			const mockDate = new Date("2024-01-01T00:00:00.000Z");
+			vi.setSystemTime(mockDate);
+
+			consoleTransport.log("info", "simple message");
+
+			expect(console.info).toHaveBeenCalledWith(
+				"2024-01-01T00:00:00.000Z [INFO] simple message",
+			);
+		});
 	});
 });
