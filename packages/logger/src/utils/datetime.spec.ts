@@ -256,5 +256,16 @@ describe("datetime utilities", () => {
 			const invalidDate = new Date("invalid");
 			expect(toISOString(invalidDate)).toBe("Invalid Date");
 		});
+
+		it("toDateTimeString은 잘못된 날짜에 대해 Invalid Date를 반환합니다", () => {
+			const invalidDate = new Date("invalid");
+			expect(toDateTimeString(invalidDate)).toBe("Invalid Date");
+		});
+
+		it("formatDate는 잘못된 format에 대해 기본값(iso)을 사용합니다", () => {
+			// @ts-ignore - test code
+			const result = formatDate(testDate, "invalid-format");
+			expect(result).toBe("2024-01-15T12:30:45.123Z");
+		});
 	});
 });
