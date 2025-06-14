@@ -360,6 +360,19 @@ describe("FileSystem Utils", () => {
 			expect(result).toBe(false);
 			expect(fs.renameSync).not.toHaveBeenCalled();
 		});
+
+		it("이동 실패 시 false를 반환합니다", () => {
+			vi.mocked(fs.existsSync)
+				.mockReturnValueOnce(true)
+				.mockReturnValueOnce(true);
+			vi.mocked(fs.renameSync).mockImplementation(() => {
+				throw new Error("Permission denied");
+			});
+
+			const result = moveFile("/test/old.txt", "/test/new.txt");
+
+			expect(result).toBe(false);
+		});
 	});
 
 	describe("copyFile", () => {
@@ -376,6 +389,28 @@ describe("FileSystem Utils", () => {
 				"/test/source.txt",
 				"/test/dest.txt",
 			);
+		});
+
+		it("존재하지 않는 원본 파일은 false를 반환합니다", () => {
+			vi.mocked(fs.existsSync).mockReturnValue(false);
+
+			const result = copyFile("/test/nonexistent.txt", "/test/dest.txt");
+
+			expect(result).toBe(false);
+			expect(fs.copyFileSync).not.toHaveBeenCalled();
+		});
+
+		it("복사 실패 시 false를 반환합니다", () => {
+			vi.mocked(fs.existsSync)
+				.mockReturnValueOnce(true)
+				.mockReturnValueOnce(true);
+			vi.mocked(fs.copyFileSync).mockImplementation(() => {
+				throw new Error("Permission denied");
+			});
+
+			const result = copyFile("/test/source.txt", "/test/dest.txt");
+
+			expect(result).toBe(false);
 		});
 	});
 
@@ -479,6 +514,39 @@ describe("FileSystem Utils", () => {
 			});
 
 			expect(result).toBe(true);
+		});
+
+		it("압축 중 에러 발생 시 false를 반환합니다", async () => {
+			vi.mocked(fs.existsSync).mockReturnValue(true);
+
+			// 스트림 체인 모킹
+			mockReadStream.pipe.mockReturnValue(mockGzip);
+			mockGzip.pipe.mockReturnValue(mockWriteStream);
+
+			// error 이벤트 시뮬레이션
+			mockWriteStream.on.mockImplementation(
+				(event: string, callback: Function) => {
+					if (event === "error") {
+						setTimeout(callback, 0);
+					}
+					return mockWriteStream;
+				},
+			);
+
+			const result = await compressFile("/test/file.txt");
+
+			expect(result).toBe(false);
+		});
+
+		it("압축 함수 실행 중 예외 발생 시 false를 반환합니다", async () => {
+			vi.mocked(fs.existsSync).mockReturnValue(true);
+			vi.mocked(createGzip).mockImplementation(() => {
+				throw new Error("Compression error");
+			});
+
+			const result = await compressFile("/test/file.txt");
+
+			expect(result).toBe(false);
 		});
 	});
 
