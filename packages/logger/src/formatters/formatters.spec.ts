@@ -30,7 +30,7 @@ describe("Formatters", () => {
 			const result = formatter.format("error", "error message", {}, testDate);
 
 			expect(result).toBe(
-				"2024-01-01T12:30:45.123Z [ERROR] error message {}\n",
+				"2024-01-01T12:30:45.123Z [ERROR] error message\n",
 			);
 		});
 

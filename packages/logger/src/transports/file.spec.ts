@@ -138,7 +138,7 @@ describe("FileTransport", () => {
 			transport.log("info", "test message");
 
 			expect(mockWriteStream.write).toHaveBeenCalledWith(
-				"2024-01-01T00:00:00.000Z [INFO] test message {}\n",
+				"2024-01-01T00:00:00.000Z [INFO] test message\n",
 			);
 		});
 
@@ -213,6 +213,19 @@ describe("FileTransport", () => {
 			const writeCall = mockWriteStream.write.mock.calls[0][0];
 			expect(writeCall).toContain("12:30:45 warn ");
 			expect(writeCall).toContain("warning message");
+		});
+
+		it("빈 메타데이터를 올바르게 처리합니다", () => {
+			const mockDate = new Date("2024-01-01T12:30:45.000Z");
+			vi.setSystemTime(mockDate);
+
+			const transport = new FileTransport("/tmp/test.log");
+			transport.log("info", "test message", {});
+
+			const writeCall = mockWriteStream.write.mock.calls[0][0];
+			expect(writeCall).toContain("test message");
+			expect(writeCall).not.toContain("{}");
+			expect(writeCall).toBe("2024-01-01T12:30:45.000Z [INFO] test message\n");
 		});
 	});
 
@@ -425,15 +438,6 @@ describe("FileTransport", () => {
 
 			expect(mockWriteStream.write).toHaveBeenCalled();
 			expect(globalBackgroundQueue.enqueue).toHaveBeenCalled();
-		});
-
-		it("빈 메타데이터를 올바르게 처리합니다", () => {
-			const transport = new FileTransport("/tmp/test.log");
-
-			transport.log("info", "test message", {});
-
-			const writeCall = mockWriteStream.write.mock.calls[0][0];
-			expect(writeCall).toContain("{}");
 		});
 
 		it("복잡한 메타데이터를 직렬화합니다", () => {

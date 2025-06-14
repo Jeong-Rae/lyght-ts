@@ -1,15 +1,6 @@
 import { LogLevel, Transport, Meta } from "./types";
 import { now } from "./utils/datetime";
-
-/**
- * 로그 레벨 우선순위 매핑
- */
-const LOG_LEVELS: Record<LogLevel, number> = {
-	debug: 0,
-	info: 1,
-	warn: 2,
-	error: 3,
-};
+import { isLogLevelEnabled, isValidLogLevel } from "./utils/log-level";
 
 /**
  * 메인 Logger 클래스
@@ -23,7 +14,7 @@ export class Logger {
 	 */
 	static {
 		const envLogLevel = process.env.LOG_LEVEL?.toLowerCase() as LogLevel;
-		if (envLogLevel && envLogLevel in LOG_LEVELS) {
+		if (envLogLevel && isValidLogLevel(envLogLevel)) {
 			Logger.logLevel = envLogLevel;
 		}
 	}
@@ -60,7 +51,7 @@ export class Logger {
 	 * 지정된 레벨의 로그를 출력할지 확인합니다.
 	 */
 	static shouldLog(level: LogLevel): boolean {
-		return LOG_LEVELS[level] >= LOG_LEVELS[Logger.logLevel];
+		return isLogLevelEnabled(level, Logger.logLevel);
 	}
 
 	/**

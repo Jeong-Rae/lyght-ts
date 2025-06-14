@@ -20,6 +20,14 @@ export const FILE_NUMBER_REGEX = /\.(\d+)(\.gz)?$/;
 // 로그 레벨 패딩 길이
 export const LOG_LEVEL_PADDING = 5;
 
+// 로그 레벨 우선순위 (숫자가 높을수록 중요한 레벨)
+export const LOG_LEVEL_PRIORITY = {
+	debug: 10,
+	info: 20,
+	warn: 30,
+	error: 40,
+} as const;
+
 // 백그라운드 작업 큐 설정
 export const BACKGROUND_QUEUE_DELAY = 0; // 즉시 처리
 export const MAX_QUEUE_SIZE = 1000; // 최대 큐 크기

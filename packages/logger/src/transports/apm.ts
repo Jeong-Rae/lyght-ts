@@ -1,5 +1,6 @@
 import { Transport, LogLevel, Meta } from "../types";
 import { now } from "../utils/datetime";
+import { isLogLevelEnabled } from "../utils/log-level";
 
 // APM 클라이언트 타입 정의
 interface ApmClient {
@@ -50,13 +51,6 @@ export class ApmTransport implements Transport {
 	}
 
 	private shouldCapture(level: LogLevel): boolean {
-		const levels: Record<LogLevel, number> = {
-			debug: 0,
-			info: 1,
-			warn: 2,
-			error: 3,
-		};
-
-		return levels[level] >= levels[this.captureLevel];
+		return isLogLevelEnabled(level, this.captureLevel);
 	}
 }

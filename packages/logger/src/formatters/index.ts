@@ -22,8 +22,8 @@ export class DefaultFormatter implements LogFormatter {
 		const formattedTimestamp = toISOString(timestamp);
 		const formattedLevel = `[${level.toUpperCase()}]`;
 		const formattedMeta =
-			Object.keys(meta).length > 0 ? JSON.stringify(meta) : "";
-		return `${formattedTimestamp} ${formattedLevel} ${message} ${formattedMeta}\n`;
+			Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : "";
+		return `${formattedTimestamp} ${formattedLevel} ${message}${formattedMeta}\n`;
 	}
 }
 

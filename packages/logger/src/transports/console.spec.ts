@@ -50,7 +50,7 @@ describe("ConsoleTransport", () => {
 			consoleTransport.log("warn", "warning message", {}, mockDate);
 
 			expect(console.warn).toHaveBeenCalledWith(
-				"2024-01-01T09:15:30.456Z [WARN] warning message {}",
+				"2024-01-01T09:15:30.456Z [WARN] warning message",
 			);
 		});
 
@@ -73,7 +73,7 @@ describe("ConsoleTransport", () => {
 			consoleTransport.log("info", "simple message", undefined, mockDate);
 
 			expect(console.info).toHaveBeenCalledWith(
-				"2024-01-01T00:00:00.000Z [INFO] simple message {}",
+				"2024-01-01T00:00:00.000Z [INFO] simple message",
 			);
 		});
 
@@ -93,16 +93,16 @@ describe("ConsoleTransport", () => {
 			});
 
 			expect(console.debug).toHaveBeenCalledWith(
-				"2024-01-01T00:00:00.000Z [DEBUG] debug test {}",
+				"2024-01-01T00:00:00.000Z [DEBUG] debug test",
 			);
 			expect(console.info).toHaveBeenCalledWith(
-				"2024-01-01T00:00:00.000Z [INFO] info test {}",
+				"2024-01-01T00:00:00.000Z [INFO] info test",
 			);
 			expect(console.warn).toHaveBeenCalledWith(
-				"2024-01-01T00:00:00.000Z [WARN] warn test {}",
+				"2024-01-01T00:00:00.000Z [WARN] warn test",
 			);
 			expect(console.error).toHaveBeenCalledWith(
-				"2024-01-01T00:00:00.000Z [ERROR] error test {}",
+				"2024-01-01T00:00:00.000Z [ERROR] error test",
 			);
 		});
 
