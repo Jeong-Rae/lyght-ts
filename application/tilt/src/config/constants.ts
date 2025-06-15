@@ -26,6 +26,6 @@ export const CANVAS_ID = 'gameCanvas' as const;
 export const CANVAS_PIXEL_WIDTH = 800 as const; // 20:9 비율 → 높이 360
 export const CANVAS_PIXEL_HEIGHT = 360 as const;
 export const BAR_LINE_WIDTH = 5 as const; // 막대기 두께(px)
-export const BALL_RADIUS_PX = 10 as const; // 공 반지름(px) 
+export const BALL_RADIUS_PX = 10 as const; // 공 반지름(px)
 export const BAR_COLOR = '#333D4B' as const; // BEM 규칙 폰트 색상과 동일
 export const BALL_COLOR = '#ff0000' as const; // 공 색상

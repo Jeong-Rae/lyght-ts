@@ -9,7 +9,7 @@
       "@/*": ["src/*"]
     },
     "jsx": "preserve",
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
   "include": ["src"]
 }

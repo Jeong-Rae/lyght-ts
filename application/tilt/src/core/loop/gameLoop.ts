@@ -1,4 +1,4 @@
-import { K } from "@/config/constants";
+import { K } from '@/config/constants';
 
 export type TickCallback = (dt: number) => void;
 
