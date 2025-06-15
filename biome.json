@@ -1,5 +1,6 @@
 {
     "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+
     "vcs": {
         "enabled": false,
         "clientKind": "git",
@@ -18,13 +19,104 @@
     "organizeImports": {
         "enabled": true
     },
+
     "linter": {
         "enabled": true,
+        "ignore": ["dist", "node_modules", "coverage"],
         "rules": {
-            "recommended": true
+            "recommended": true,
 
-        },
-        "ignore": ["dist", "node_modules"]
+            "a11y": {
+                "useAltText": "error",
+                "useAnchorContent": "error",
+                "useValidAnchor": "error",
+                "useButtonType": "error",
+                "useHtmlLang": "error",
+                "useIframeTitle": "error",
+                "useHeadingContent": "error",
+                "useMediaCaption": "error",
+                "useFocusableInteractive": "error",
+                "useSemanticElements": "error",
+                "noRedundantRoles": "error",
+                "noAriaHiddenOnFocusable": "error",
+                "noNoninteractiveElementToInteractiveRole": "error",
+                "noInteractiveElementToNoninteractiveRole": "error",
+                "noBlankTarget": "error",
+                "noAutofocus": "warn",
+                "useKeyWithClickEvents": "warn",
+                "useKeyWithMouseEvents": "warn"
+            },
+
+            "security": {
+                "noDangerouslySetInnerHtml": "error",
+                "noDangerouslySetInnerHtmlWithChildren": "error",
+                "noGlobalEval": "error"
+            },
+
+            "correctness": {
+                "noChildrenProp": "error",
+                "useJsxKeyInIterable": "error",
+                "useHookAtTopLevel": "error",
+                "useExhaustiveDependencies": "error",
+                "noVoidElementsWithChildren": "error",
+                "noUnusedVariables": "warn",
+                "noUnusedImports": "warn",
+                "noUnusedFunctionParameters": "warn",
+                "noUnreachable": "error",
+                "noUnsafeOptionalChaining": "error",
+                "noInvalidBuiltinInstantiation": "error",
+                "noUndeclaredVariables": "error",
+                "noUndeclaredDependencies": "error",
+                "noVoidTypeReturn": "error"
+            },
+
+            "complexity": {
+                "noBannedTypes": "error",
+                "noEmptyTypeParameters": "error",
+                "noUselessTypeConstraint": "error",
+                "noStaticOnlyClass": "error",
+                "noThisInStatic": "error",
+                "noUselessConstructor": "error",
+                "useOptionalChain": "error",
+                "noUselessStringConcat": "error",
+                "noUselessTernary": "error",
+                "noUselessFragments": "warn"
+            },
+
+            "performance": {
+                "noAccumulatingSpread": "warn"
+            },
+
+            "style": {
+                "noNonNullAssertion": "error",
+                "noImplicitBoolean": "error",
+                "noInferrableTypes": "error",
+                "useAsConstAssertion": "error",
+                "useExportType": "error",
+                "useImportType": "error",
+                "useConsistentArrayType": "error",
+                "useConst": "error",
+                "useShorthandFunctionType": "error",
+                "useNumericLiterals": "error",
+                "useTemplate": "error",
+                "useBlockStatements": "error",
+                "useCollapsedElseIf": "error",
+                "useThrowOnlyError": "error",
+                "useThrowNewError": "error",
+
+                "useFragmentSyntax": "warn",
+                "useSelfClosingElements": "warn",
+                "useExplicitLengthCheck": "warn",
+                "useLiteralEnumMembers": "error"
+            },
+
+            "nursery": {
+                "noEnum": "error",
+                "useExplicitType": "error",
+                "useAdjacentOverloadSignatures": "error",
+                "useConsistentMemberAccessibility": "error"
+            }
+        }
     },
     "javascript": {
         "formatter": {
