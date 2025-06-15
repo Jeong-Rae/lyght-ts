@@ -1,5 +1,5 @@
-import { LogLevel } from "../types";
-import { LOG_LEVEL_PRIORITY } from "../constants";
+import { LOG_LEVEL_PRIORITY } from '../constants';
+import type { LogLevel } from '../types';
 
 /**
  * 첫 번째 로그 레벨이 두 번째 로그 레벨보다 높거나 같은지 확인합니다.
@@ -13,11 +13,8 @@ import { LOG_LEVEL_PRIORITY } from "../constants";
  * isLogLevelEnabled('warn', 'error'); // false
  * ```
  */
-export function isLogLevelEnabled(
-	level: LogLevel,
-	threshold: LogLevel,
-): boolean {
-	return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[threshold];
+export function isLogLevelEnabled(level: LogLevel, threshold: LogLevel): boolean {
+  return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[threshold];
 }
 
 /**
@@ -32,7 +29,7 @@ export function isLogLevelEnabled(
  * ```
  */
 export function getLogLevelPriority(level: LogLevel): number {
-	return LOG_LEVEL_PRIORITY[level];
+  return LOG_LEVEL_PRIORITY[level];
 }
 
 /**
@@ -47,5 +44,5 @@ export function getLogLevelPriority(level: LogLevel): number {
  * ```
  */
 export function isValidLogLevel(level: string): level is LogLevel {
-	return level in LOG_LEVEL_PRIORITY;
+  return level in LOG_LEVEL_PRIORITY;
 }

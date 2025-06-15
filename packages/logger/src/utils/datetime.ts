@@ -13,10 +13,10 @@
  * ```
  */
 export function toISOString(date: Date = new Date()): string {
-	if (isNaN(date.getTime())) {
-		return "Invalid Date";
-	}
-	return date.toISOString();
+  if (Number.isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+  return date.toISOString();
 }
 
 /**
@@ -30,7 +30,7 @@ export function toISOString(date: Date = new Date()): string {
  * ```
  */
 export function toTimeString(date: Date = new Date()): string {
-	return date.toISOString().split("T")[1].split(".")[0]; // UTC 시간 기준
+  return date.toISOString().split('T')[1].split('.')[0]; // UTC 시간 기준
 }
 
 /**
@@ -44,7 +44,7 @@ export function toTimeString(date: Date = new Date()): string {
  * ```
  */
 export function toDateString(date: Date = new Date()): string {
-	return date.toISOString().split("T")[0];
+  return date.toISOString().split('T')[0];
 }
 
 /**
@@ -58,11 +58,11 @@ export function toDateString(date: Date = new Date()): string {
  * ```
  */
 export function toDateTimeString(date: Date = new Date()): string {
-	if (isNaN(date.getTime())) {
-		return "Invalid Date";
-	}
-	const isoDateTime = date.toISOString();
-	return isoDateTime.replace("T", " ").split(".")[0];
+  if (Number.isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+  const isoDateTime = date.toISOString();
+  return isoDateTime.replace('T', ' ').split('.')[0];
 }
 
 /**
@@ -76,12 +76,12 @@ export function toDateTimeString(date: Date = new Date()): string {
  * ```
  */
 export function toLocalTimeString(date: Date = new Date()): string {
-	return date.toLocaleTimeString("en-GB", {
-		hour12: false,
-		hour: "2-digit",
-		minute: "2-digit",
-		second: "2-digit",
-	});
+  return date.toLocaleTimeString('en-GB', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 }
 
 /**
@@ -95,10 +95,10 @@ export function toLocalTimeString(date: Date = new Date()): string {
  * ```
  */
 export function toLocalDateString(date: Date = new Date()): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -112,7 +112,7 @@ export function toLocalDateString(date: Date = new Date()): string {
  * ```
  */
 export function toLocalDateTimeString(date: Date = new Date()): string {
-	return `${toLocalDateString(date)} ${toLocalTimeString(date)}`;
+  return `${toLocalDateString(date)} ${toLocalTimeString(date)}`;
 }
 
 /**
@@ -125,7 +125,7 @@ export function toLocalDateTimeString(date: Date = new Date()): string {
  * ```
  */
 export function now(): Date {
-	return new Date();
+  return new Date();
 }
 
 /**
@@ -138,7 +138,7 @@ export function now(): Date {
  * ```
  */
 export function nowISO(): string {
-	return toISOString();
+  return toISOString();
 }
 
 /**
@@ -151,7 +151,7 @@ export function nowISO(): string {
  * ```
  */
 export function nowTime(): string {
-	return toTimeString();
+  return toTimeString();
 }
 
 /**
@@ -164,7 +164,7 @@ export function nowTime(): string {
  * ```
  */
 export function nowDate(): string {
-	return toDateString();
+  return toDateString();
 }
 
 /**
@@ -179,7 +179,7 @@ export function nowDate(): string {
  * ```
  */
 export function isSameDay(date1: Date, date2: Date): boolean {
-	return toDateString(date1) === toDateString(date2);
+  return toDateString(date1) === toDateString(date2);
 }
 
 /**
@@ -194,9 +194,9 @@ export function isSameDay(date1: Date, date2: Date): boolean {
  * ```
  */
 export function addDays(date: Date, days: number): Date {
-	const result = new Date(date);
-	result.setDate(result.getDate() + days);
-	return result;
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
 }
 
 /**
@@ -211,9 +211,9 @@ export function addDays(date: Date, days: number): Date {
  * ```
  */
 export function addHours(date: Date, hours: number): Date {
-	const result = new Date(date);
-	result.setHours(result.getHours() + hours);
-	return result;
+  const result = new Date(date);
+  result.setHours(result.getHours() + hours);
+  return result;
 }
 
 /**
@@ -228,9 +228,9 @@ export function addHours(date: Date, hours: number): Date {
  * ```
  */
 export function addMinutes(date: Date, minutes: number): Date {
-	const result = new Date(date);
-	result.setMinutes(result.getMinutes() + minutes);
-	return result;
+  const result = new Date(date);
+  result.setMinutes(result.getMinutes() + minutes);
+  return result;
 }
 
 /**
@@ -245,9 +245,9 @@ export function addMinutes(date: Date, minutes: number): Date {
  * ```
  */
 export function daysDifference(date1: Date, date2: Date): number {
-	const DAY_IN_MS = 1000 * 60 * 60 * 24;
-	const timeDiff = date2.getTime() - date1.getTime();
-	return Math.floor(timeDiff / DAY_IN_MS);
+  const DAY_IN_MS = 1000 * 60 * 60 * 24;
+  const timeDiff = date2.getTime() - date1.getTime();
+  return Math.floor(timeDiff / DAY_IN_MS);
 }
 
 /**
@@ -262,12 +262,8 @@ export function daysDifference(date1: Date, date2: Date): number {
  * isOlderThan(new Date(), 1); // true
  * ```
  */
-export function isOlderThan(
-	date: Date,
-	days: number,
-	referenceDate: Date = new Date(),
-): boolean {
-	return daysDifference(date, referenceDate) > days;
+export function isOlderThan(date: Date, days: number, referenceDate: Date = new Date()): boolean {
+  return daysDifference(date, referenceDate) > days;
 }
 
 /**
@@ -281,17 +277,14 @@ export function isOlderThan(
  * extractDateFromFilename('app-2024-01-15.log'); // 2024-01-15T00:00:00.000Z
  * ```
  */
-export function extractDateFromFilename(
-	filename: string,
-	pattern: RegExp = /(\d{4}-\d{2}-\d{2})/,
-): Date | null {
-	const match = filename.match(pattern);
-	if (match) {
-		const dateString = match[1];
-		const date = new Date(dateString + "T00:00:00.000Z");
-		return isNaN(date.getTime()) ? null : date;
-	}
-	return null;
+export function extractDateFromFilename(filename: string, pattern: RegExp = /(\d{4}-\d{2}-\d{2})/): Date | null {
+  const match = filename.match(pattern);
+  if (match) {
+    const dateString = match[1];
+    const date = new Date(`${dateString}T00:00:00.000Z`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  return null;
 }
 
 /**
@@ -305,8 +298,8 @@ export function extractDateFromFilename(
  * ```
  */
 export function parseDate(dateString: string): Date | null {
-	const date = new Date(dateString);
-	return isNaN(date.getTime()) ? null : date;
+  const date = new Date(dateString);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 /**
@@ -321,34 +314,27 @@ export function parseDate(dateString: string): Date | null {
  * ```
  */
 export function formatDate(
-	date: Date,
-	format:
-		| "iso"
-		| "date"
-		| "time"
-		| "datetime"
-		| "local-time"
-		| "local-date"
-		| "local-datetime" = "iso",
+  date: Date,
+  format: 'iso' | 'date' | 'time' | 'datetime' | 'local-time' | 'local-date' | 'local-datetime' = 'iso',
 ): string {
-	switch (format) {
-		case "iso":
-			return toISOString(date);
-		case "date":
-			return toDateString(date);
-		case "time":
-			return toTimeString(date);
-		case "datetime":
-			return toDateTimeString(date);
-		case "local-time":
-			return toLocalTimeString(date);
-		case "local-date":
-			return toLocalDateString(date);
-		case "local-datetime":
-			return toLocalDateTimeString(date);
-		default:
-			return toISOString(date);
-	}
+  switch (format) {
+    case 'iso':
+      return toISOString(date);
+    case 'date':
+      return toDateString(date);
+    case 'time':
+      return toTimeString(date);
+    case 'datetime':
+      return toDateTimeString(date);
+    case 'local-time':
+      return toLocalTimeString(date);
+    case 'local-date':
+      return toLocalDateString(date);
+    case 'local-datetime':
+      return toLocalDateTimeString(date);
+    default:
+      return toISOString(date);
+  }
 }
 
 /**
@@ -362,7 +348,7 @@ export function formatDate(
  * ```
  */
 export function timestamp(date: Date = new Date()): number {
-	return date.getTime();
+  return date.getTime();
 }
 
 /**
@@ -376,5 +362,5 @@ export function timestamp(date: Date = new Date()): number {
  * ```
  */
 export function fromTimestamp(ts: number): Date {
-	return new Date(ts);
+  return new Date(ts);
 }
